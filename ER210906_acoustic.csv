@@ -1,0 +1,3 @@
+selection,date,begin_Time,time,end_Time,low_Freq,high_Freq,call_type,call_category
+1,9/6/2021,1433.332404,11:23,1433.92032,8498.4,9249.169,flatws.seg,ws
+2,9/6/2021,1439.439051,11:23,1440.085534,3029.5,8531.561,pulse.flat,pc

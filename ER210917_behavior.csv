@@ -1,0 +1,73 @@
+date,time,encounter,dot,tide,sample_round,group_number,group_size,count_white,count_gray,count_calf,calf_presence ,behavior,comments
+9/17/2021,10:45,3,S,Ebb,1,1,13,9,2,2,yes,Travel,Group traveling south with tide
+9/17/2021,10:46,3,S,Ebb,1,1,13,9,2,2,yes,Travel,
+9/17/2021,10:47,3,S,Ebb,1,1,13,9,2,2,yes,Travel,
+9/17/2021,10:48,3,S,Ebb,1,1,13,9,2,2,yes,Travel,1w+1g milling
+9/17/2021,10:49,3,S,Ebb,1,1,13,9,2,2,yes,Travel,
+9/17/2021,10:50,3,S,Ebb,1,1,13,9,2,2,yes,Travel,bubbling near ER mouth
+9/17/2021,10:51,3,S,Ebb,1,1,13,9,2,2,yes,Travel,bubbling near ER mouth
+9/17/2021,10:52,3,S,Ebb,1,1,13,9,2,2,yes,Travel,bubbling near ER mouth
+9/17/2021,10:53,3,S,Ebb,1,1,13,9,2,2,yes,Travel,honk
+9/17/2021,10:54,3,S,Ebb,1,1,13,9,2,2,yes,Travel,
+9/17/2021,10:55,3,S,Ebb,1,1,13,9,2,2,yes,Travel,
+9/17/2021,10:56,3,S,Ebb,1,1,13,9,2,2,yes,Travel,1g dove in ER mouth
+9/17/2021,10:57,3,S,Ebb,1,1,13,9,2,2,yes,Travel,
+9/17/2021,10:58,3,S,Ebb,1,1,13,9,2,2,yes,Travel,
+9/17/2021,10:59,3,S,Ebb,1,1,13,9,2,2,yes,Travel,1w+1c milling at mouth (33K) and other whales continue south
+9/17/2021,11:00,3,S,Ebb,1,1,13,9,2,2,yes,Travel,
+9/17/2021,11:01,3,S,Ebb,1,1,13,9,2,2,yes,Travel,3w milling and cryptic travel (32A/B)
+9/17/2021,11:02,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:03,3,S,Ebb,1,1,6,5,0,1,yes,Mill,"big splash, 1w+1c milling off BP"
+9/17/2021,11:04,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:05,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:06,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:07,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:08,3,S,Ebb,1,1,6,5,0,1,yes,Mill,1c bubbles off BP
+9/17/2021,11:09,3,S,Ebb,1,1,6,5,0,1,yes,Mill,1w bubbles off BP
+9/17/2021,11:10,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:11,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:12,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:13,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:14,3,S,Ebb,1,1,6,5,0,1,yes,Mill,100m away from ST
+9/17/2021,11:15,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:16,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:17,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:18,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:19,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:20,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:21,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:22,3,S,Ebb,1,1,6,5,0,1,yes,Mill,
+9/17/2021,11:23,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,11:24,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,11:25,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,11:26,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,11:27,3,S,Ebb,1,1,1,1,0,0,no,Travel,all whales traveled south and out of view
+9/17/2021,11:28,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,11:29,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,11:30,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,11:31,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,11:32,3,S,Ebb,1,1,1,1,0,0,no,Travel,
+9/17/2021,13:07,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:08,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:09,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:10,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:11,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:12,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:13,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:14,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:15,4,N,Flood,2,1,10,6,3,1,yes,Mill,"diving and bubbling observed but still 1500 m away, honk"
+9/17/2021,13:16,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:17,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:18,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:19,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:20,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:21,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:22,4,N,Flood,2,1,10,6,3,1,yes,Mill,traveling past garner creek (32C) towards BP
+9/17/2021,13:23,4,N,Flood,2,1,10,6,3,1,yes,Mill,
+9/17/2021,13:24,4,N,Flood,2,1,15,8,5,2,yes,Travel,whales traveled past BP at slow pace and shallow surfacing
+9/17/2021,13:25,4,N,Flood,2,1,15,8,5,2,yes,Travel,
+9/17/2021,13:26,4,N,Flood,2,1,15,8,5,2,yes,Travel,dive off BP
+9/17/2021,13:27,4,N,Flood,2,1,15,8,5,2,yes,Travel,
+9/17/2021,13:28,4,N,Flood,2,1,15,8,5,2,yes,Travel,
+9/17/2021,13:29,4,N,Flood,2,1,15,8,5,2,yes,Travel,
+9/17/2021,13:30,4,N,Flood,2,1,15,8,5,2,yes,Travel,
