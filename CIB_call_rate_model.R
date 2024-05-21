@@ -9,6 +9,7 @@ library(corrplot)
 library(performance)
 library(parameters)
 library(see)
+library(DHARMa)
 library(patchwork)
 library(lmtest)
 
@@ -369,44 +370,58 @@ stats.tide <- callrate_total %>%
             #relative_mean=mean(n_minute_group),relative_sd=sd(n_minute_group)) 
 
 
-######### possible over-dispersion?
+#possible over-dispersion?
 ## Calling rate (# calls/minute)
 mean(callrate_total$n_minute)
 var(callrate_total$n_minute)
 
-######## possible zero-inflation?
+#possible zero-inflation?
 hist(callrate_total$n_minute,50)
 
 
 
-########## Model building - GLMM
+##### Model building - GLMM
 ## Total calling rate (#calls/minute)
 library(lme4)
 
 #poisson test model to see coefficient of group size
-model<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
+test.model<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
                  family=poisson(link="log"), data=callrate_total)
 
-summary(model)
-check_overdispersion(model) #overdispersed
-check_zeroinflation(model)  #zero-inflation
-plot(parameters(model))
+summary(test.model)
+#coefficient= 1.1 so SC says to use offset for group size
 
 #poisson
 glmm.pois<-glmer(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
               family=poisson(link="log"), data=callrate_total)
 
 summary(glmm.pois)
-check_overdispersion(glmm.pois) #overdispersed
-check_zeroinflation(glmm.pois)  #zero-inflation
 plot(parameters(glmm.pois))
 
-#negative binomial 
+#check over-dispersion
+#with performance package
+check_overdispersion(glmm.pois) #over-dispersed
+
+#manually
+overdisp_fun <- function(model) {
+  rdf <- df.residual(model)
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+overdisp_fun(glmm.pois)
+
+#check zero-inflation
+check_zeroinflation(glmm.pois)  #zero-inflation
+
+#poisson is over-dispersed and zero-inflated. Run negative binomial:
 glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
                   data=callrate_total)
 
 summary(glmm.nb)
-check_overdispersion(glmm.nb)  #no overdispersion
+check_overdispersion(glmm.nb)  #no over-dispersion
 check_zeroinflation(glmm.nb)   #no zero-inflation
 plot(parameters(glmm.nb))
 
@@ -432,26 +447,57 @@ AIC(glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4)  #nb3 is the best model
 
 #model summary
 summary(glmm.nb3) 
+plot(parameters(glmm.nb3))
 
 #model diagnostic plots
 check_model(glmm.nb3)
 
 model_performance(glmm.nb3)
 check_collinearity(glmm.nb3)
+
+#check over-dispersion
+#with performance package
 check_overdispersion(glmm.nb3)
+
+#manually
+overdisp_fun <- function(model) {
+  rdf <- df.residual(model)
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+overdisp_fun(glmm.nb3)
+
+#check zero inflation
 check_zeroinflation(glmm.nb3)  
-plot(parameters(glmm.nb3))
 
 #95% confidence intervals
 confint(glmm.nb3)
 
-#residuals
-residuals(glmm.nb3)
-plot(residuals(glmm.nb3))   # ASK SARAH ABOUT THIS
+###residuals     # ASK SARAH ABOUT THIS
+#raw 
+residuals(glmm.nb3,type="response")
+plot(residuals(glmm.nb3, type="response"))   
+
+#deviance 
+quantile(resid(glmm.nb3))
+plot(quantile(resid(glmm.nb3)))
+
+#residual deviance (deviance residuals squared and added)
+deviance(glmm.nb3)
+LRstats(glmm.nb3)
+
+#pearsons 
+residuals(glmm.nb3,type="pearson")
+plot(residuals(glmm.nb3, type="pearson")) 
 
 #predictions
 predict(glmm.nb3)
 plot(predict(glmm.nb3))  # ASK SARAH ABOUT THIS
+
+
 
 
 # OR WE CAN USE GLMMTMB- compare with above
