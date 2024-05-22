@@ -383,6 +383,7 @@ hist(callrate_total$n_minute,50)
 ##### Model building - GLMM
 ## Total calling rate (#calls/minute)
 library(lme4)
+library(MASS)
 
 #poisson test model to see coefficient of group size
 test.model<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
@@ -427,6 +428,16 @@ plot(parameters(glmm.nb))
 
 #likelihood ratio test to compare models
 lrtest(glmm.pois,glmm.nb)  #nb better model
+
+#test nb with and without random effect
+glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
+                  data=callrate_total)
+
+glmm.nb_no.re<-glm.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide,
+                  data=callrate_total)
+
+anova(glmm.nb,glmm.nb_no.re)   #Model with random effect is better
+
 
 
 #model selection on nb model
@@ -582,3 +593,74 @@ plot(predict(tmbnb.3))
 
 
 
+
+####################################### test model without big group
+test <- read.csv("callrate_total_wo big group.csv") %>% 
+      mutate(behavior = as.factor(behavior),
+       calf_presence = as.factor(calf_presence),
+       tide = as.factor(tide),
+       encounter = as.factor(encounter))
+
+library(lme4)
+
+#poisson test model to see coefficient of group size
+test.model<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
+                  family=poisson(link="log"), data=test)
+
+summary(test.model)
+#coefficient= 0.8 
+
+#poisson
+glmm.pois<-glmer(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
+                 family=poisson(link="log"), data=test)
+
+summary(glmm.pois)
+plot(parameters(glmm.pois))
+
+#check over-dispersion
+check_overdispersion(glmm.pois) #over-dispersed
+
+#check zero-inflation
+check_zeroinflation(glmm.pois)  #zero-inflation
+
+#poisson is over-dispersed and zero-inflated. Run negative binomial:
+glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
+                  data=test)
+
+summary(glmm.nb)
+check_overdispersion(glmm.nb)  #no over-dispersion
+check_zeroinflation(glmm.nb)   #no zero-inflation
+plot(parameters(glmm.nb))
+
+#likelihood ratio test to compare models
+lrtest(glmm.pois,glmm.nb)  #nb better model
+
+
+#model selection on nb model
+glmm.nb1<-glmer.nb(n_minute ~ behavior + (1|encounter),
+                   data=test)
+
+glmm.nb2<-glmer.nb(n_minute ~ behavior + offset(log(group_size)) + (1|encounter),
+                   data=test)
+
+glmm.nb3<-glmer.nb(n_minute ~ behavior + offset(log(group_size)) + calf_presence + (1|encounter),
+                   data=test)
+
+glmm.nb4<-glmer.nb(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
+                   data=test)
+
+#model selection
+AIC(glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4)  #nb3 is the best model
+
+#model summary
+summary(glmm.nb3) 
+plot(parameters(glmm.nb3))
+
+#model diagnostic plots
+check_model(glmm.nb3)
+
+#check over-dispersion
+check_overdispersion(glmm.nb3)
+
+#check zero inflation
+check_zeroinflation(glmm.nb3)  
