@@ -12,6 +12,8 @@ library(see)
 library(DHARMa)
 library(patchwork)
 library(lmtest)
+library(lme4)
+library(MASS)
 
 #load data
 setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -147,29 +149,29 @@ ggplot(data=nonzeros_total, aes(x=n_minute)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
   labs(x="Total call rate (#calls/minute)",y="Count") 
 
-#Per capital call rate
-#ggplot(data=callrate_total, aes(x=n_minute_group)) +
-  #geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
-  #theme_classic() +
-  #scale_y_continuous(expand=c(0,0)) +
-  #scale_x_continuous(expand=c(0,0),breaks=seq(0,6,by=1)) +
-  #labs(x="Per capita call rate (#calls/minute/whale)",y="Count") 
+# Per capital call rate
+# ggplot(data=callrate_total, aes(x=n_minute_group)) +
+#   geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
+#   theme_classic() +
+#   scale_y_continuous(expand=c(0,0)) +
+#   scale_x_continuous(expand=c(0,0),breaks=seq(0,6,by=1)) +
+#   labs(x="Per capita call rate (#calls/minute/whale)",y="Count")
 
 #Per capita call rate without zeros to see shape
-#nonzeros_relative<-callrate_total[callrate_total$n_minute_group>0,]
-#ggplot(data=nonzeros_relative, aes(x=n_minute_group)) +
-  #geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
-  #theme_classic() +
-  #scale_y_continuous(expand=c(0,0)) +
-  #scale_x_continuous(expand=c(0,0),breaks=seq(0,6,by=1)) +
-  #labs(x="Per capita call rate (#calls/minute/whale)",y="Count") 
+# nonzeros_relative<-callrate_total[callrate_total$n_minute_group>0,]
+# ggplot(data=nonzeros_relative, aes(x=n_minute_group)) +
+#   geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
+#   theme_classic() +
+#   scale_y_continuous(expand=c(0,0)) +
+#   scale_x_continuous(expand=c(0,0),breaks=seq(0,6,by=1)) +
+#   labs(x="Per capita call rate (#calls/minute/whale)",y="Count")
 
 
-###### Group size vs calling rate (#calls/minute)
+###### Group size vs calling rate (#calls/minute) fit with line
 ggplot(callrate_total, aes(x=group_size, y=n_minute)) +
   geom_point(alpha=0.2, size=3) +
   theme_classic() +
-  geom_smooth(method="gam") +
+  geom_smooth(method="glm") +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
   ggtitle("Calling rate") +
   theme(plot.title=element_text(hjust=0.5)) +
@@ -177,19 +179,19 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute)) +
   scale_x_continuous(breaks=seq(0,60,by=5)) 
 
 ###### Group size vs per capita calling rate (#calls/minute/whale)
-ggplot(callrate_total, aes(x=group_size, y=n_minute_group)) +
-  geom_point(alpha=0.2, size=3) +
-  theme_classic() +
-  geom_smooth(method="glm") +
-  labs(x="Group size",y="Calling rate (# calls/minute/whale)") +
-  ggtitle("Per capita calling rate") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(breaks=seq(0,6,by=1)) +
-  scale_x_continuous(breaks=seq(0,60,by=5)) 
+# #ggplot(callrate_total, aes(x=group_size, y=n_minute_group)) +
+#   geom_point(alpha=0.2, size=3) +
+#   theme_classic() +
+#   geom_smooth(method="glm") +
+#   labs(x="Group size",y="Calling rate (# calls/minute/whale)") +
+#   ggtitle("Per capita calling rate") +
+#   theme(plot.title=element_text(hjust=0.5)) +
+#   scale_y_continuous(breaks=seq(0,6,by=1)) +
+#   scale_x_continuous(breaks=seq(0,60,by=5)) 
 
 
-##Plot for Amy- separate call rate into call rate per call category
-callrate_total_cattype <- data_total %>%
+#Separate call rate by call category
+callrate_by_cat <- data_total %>%
   group_by(date,time,encounter,tide,group_size,calf_presence,behavior, call_category) %>% 
   summarise(n_minute = n()) %>% 
   mutate(n_minute = case_when(is.na(call_category)~0, TRUE~n_minute)) %>% 
@@ -199,51 +201,50 @@ callrate_total_cattype <- data_total %>%
          calf_presence = as.factor(calf_presence),
          tide = as.factor(tide),
          encounter = as.factor(encounter),
-         n_minute_group_pc = pc/group_size, 
-         n_minute_group_ws = ws/group_size,
-         n_minute_group_cc = cc/group_size)
+         n_minute_group_pc = pc, 
+         n_minute_group_ws = ws,
+         n_minute_group_cc = cc)
 
 #whistles
-ggplot(callrate_total_cattype, aes(x=group_size, y=n_minute_group_ws)) +
+ggplot(callrate_by_cat, aes(x=group_size, y=n_minute_group_ws)) +
   geom_point(alpha=0.2, size=3) +
   theme_classic() +
-  labs(x="Group size",y="Calling rate (# calls/minute/whale)") +
-  ggtitle("Per capita calling rate- whistles") +
+  labs(x="Group size",y="Calling rate (# calls/minute)") +
+  ggtitle("Calling rate- whistles") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(breaks=seq(0,6,by=1)) +
-  scale_x_continuous(breaks=seq(0,60,by=5)) 
+  scale_y_continuous(breaks=seq(0,60,by=10)) +
+  scale_x_continuous(breaks=seq(0,60,by=10)) 
 
 #pulsed calls
-ggplot(callrate_total_cattype, aes(x=group_size, y=n_minute_group_pc)) +
+ggplot(callrate_by_cat, aes(x=group_size, y=n_minute_group_pc)) +
   geom_point(alpha=0.2, size=3) +
   theme_classic() +
-  labs(x="Group size",y="Calling rate (# calls/minute/whale)") +
-  ggtitle("Per capita calling rate- pulsed calls") +
+  labs(x="Group size",y="Calling rate (# calls/minute)") +
+  ggtitle("Calling rate- pulsed calls") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(breaks=seq(0,6,by=1)) +
-  scale_x_continuous(breaks=seq(0,60,by=5)) 
+  scale_y_continuous(breaks=seq(0,60,by=10)) +
+  scale_x_continuous(breaks=seq(0,60,by=10)) 
 
 #combined calls
-ggplot(callrate_total_cattype, aes(x=group_size, y=n_minute_group_cc)) +
+ggplot(callrate_by_cat, aes(x=group_size, y=n_minute_group_cc)) +
   geom_point(alpha=0.2, size=3) +
   theme_classic() +
-  labs(x="Group size",y="Calling rate (# calls/minute/whale)") +
-  ggtitle("Per capita calling rate- combined calls") +
+  labs(x="Group size",y="Calling rate (# calls/minute)") +
+  ggtitle("Calling rate- combined calls") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(breaks=seq(0,6,by=1)) +
-  scale_x_continuous(breaks=seq(0,60,by=5)) 
+  scale_y_continuous(breaks=seq(0,20,by=5)) +
+  scale_x_continuous(breaks=seq(0,60,by=10)) 
 
 
 ##Plot for Manolo- divide by sub-encounters when group size changes
-#Group size vs #calls/minute/group size
-callrate_total_subencounters <- read_csv("callrate_total_subencounters.csv")
+#callrate_total_subencounters <- read_csv("callrate_total_subencounters.csv")
 
-ggplot(callrate_total_subencounters, aes(x=group_size, y=n_minute_group, color=encounter)) +
-  geom_point(alpha=0.2, size=3) +
-  theme_classic() +
-  labs(x="Group size",y="Relative calling rate (# calls/minute/whale)") +
-  scale_y_continuous(breaks=seq(0,6,by=1)) +
-  scale_x_continuous(breaks=seq(0,60,by=5)) 
+# ggplot(callrate_total_subencounters, aes(x=group_size, y=n_minute, color=encounter)) +
+#   geom_point(alpha=0.2, size=3) +
+#   theme_classic() +
+#   labs(x="Group size",y="Relative calling rate (# calls/minute/whale)") +
+#   scale_y_continuous(breaks=seq(0,6,by=1)) +
+#   scale_x_continuous(breaks=seq(0,60,by=5))
 
 
 ##### Group size vs calling rate by variable
@@ -253,7 +254,7 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute, color=behavior)) +
   theme_classic() +
   scale_color_viridis(discrete=T,begin=0.3,end=0.8) +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
-  scale_y_continuous(breaks=seq(0,6,by=1)) +
+  scale_y_continuous(breaks=seq(0,60,by=10)) +
   scale_x_continuous(breaks=seq(0,60,by=5)) 
 
 #calf presence
@@ -262,7 +263,7 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute, color=calf_presence)) +
   theme_classic() +
   scale_color_viridis(discrete=T,begin=0.3,end=0.8) +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
-  scale_y_continuous(breaks=seq(0,6,by=1)) +
+  scale_y_continuous(breaks=seq(0,60,by=10)) +
   scale_x_continuous(breaks=seq(0,60,by=5))
 
 #tide
@@ -271,12 +272,12 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute, color=tide)) +
   theme_classic() +
   scale_color_viridis(discrete=T,begin=0.3,end=0.8) +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
-  scale_y_continuous(breaks=seq(0,6,by=1)) +
+  scale_y_continuous(breaks=seq(0,60,by=10)) +
   scale_x_continuous(breaks=seq(0,60,by=5))
 
 
 #### violin plots of call rate by categorical variables
-#By behavior
+#Behavior
 p1 <- callrate_total %>%
   ggplot(aes(x=behavior, y=n_minute, fill=behavior)) +
   geom_violin(show.legend = FALSE) +
@@ -296,7 +297,7 @@ p2 <- callrate_total %>%
 
 p1+p2
 
-#By calf presence
+#Calf presence
 p3 <- callrate_total %>%
   ggplot(aes(x=calf_presence, y=n_minute, fill=calf_presence)) +
   geom_violin(show.legend = FALSE) +
@@ -316,7 +317,7 @@ p4 <- callrate_total %>%
 
 p3+p4
 
-#By tidal state
+#Tide
 p5 <- callrate_total %>%
   ggplot(aes(x=tide, y=n_minute, fill=tide)) +
   geom_violin(show.legend = FALSE) +
@@ -375,17 +376,10 @@ stats.tide <- callrate_total %>%
 mean(callrate_total$n_minute)
 var(callrate_total$n_minute)
 
-#possible zero-inflation?
-hist(callrate_total$n_minute,50)
-
-
 
 ##### Model building - GLMM
-## Total calling rate (#calls/minute)
-library(lme4)
-library(MASS)
 
-#poisson test model to see coefficient of group size
+##poisson test model to see coefficient of group size
 test.model<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
                  family=poisson(link="log"), data=callrate_total)
 
@@ -412,12 +406,12 @@ overdisp_fun <- function(model) {
   pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
   c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
 }
-overdisp_fun(glmm.pois)
+overdisp_fun(glmm.pois)   #over-dispersed
 
 #check zero-inflation
 check_zeroinflation(glmm.pois)  #zero-inflation
 
-#poisson is over-dispersed and zero-inflated. Run negative binomial:
+##poisson is over-dispersed and zero-inflated. Run negative binomial:
 glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
                   data=callrate_total)
 
@@ -498,7 +492,6 @@ plot(quantile(resid(glmm.nb3)))
 
 #residual deviance (deviance residuals squared and added)
 deviance(glmm.nb3)
-LRstats(glmm.nb3)
 
 #pearsons 
 residuals(glmm.nb3,type="pearson")
