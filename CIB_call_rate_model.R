@@ -433,7 +433,6 @@ glmm.nb_no.re<-glm.nb(n_minute~ behavior + offset(log(group_size)) + calf_presen
 anova(glmm.nb,glmm.nb_no.re)   #Model with random effect is better
 
 
-
 #model selection on nb model
 glmm.nb1<-glmer.nb(n_minute ~ behavior + (1|encounter),
                   data=callrate_total)
@@ -450,6 +449,7 @@ glmm.nb4<-glmer.nb(n_minute ~ behavior + offset(log(group_size)) + calf_presence
 #model selection
 AIC(glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4)  #nb3 is the best model
 
+
 #model summary
 summary(glmm.nb3) 
 plot(parameters(glmm.nb3))
@@ -457,8 +457,12 @@ plot(parameters(glmm.nb3))
 #model diagnostic plots
 check_model(glmm.nb3)
 
+#model overall performance
+#Conditional R2: takes both the fixed and random effects into account.
+#Marginal R2: considers only the variance of the fixed effects.
 model_performance(glmm.nb3)
 check_collinearity(glmm.nb3)
+
 
 #check over-dispersion
 #with performance package
@@ -500,6 +504,8 @@ plot(residuals(glmm.nb3, type="pearson"))
 #predictions
 predict(glmm.nb3)
 plot(predict(glmm.nb3))  # ASK SARAH ABOUT THIS
+
+
 
 
 
