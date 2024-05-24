@@ -378,7 +378,6 @@ var(callrate_total$n_minute)
 
 
 ##### Model building - GLMM
-
 ##poisson test model to see coefficient of group size
 test.model<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
                  family=poisson(link="log"), data=callrate_total)
@@ -462,7 +461,6 @@ check_model(glmm.nb3)
 #Marginal R2: considers only the variance of the fixed effects.
 model_performance(glmm.nb3)
 check_collinearity(glmm.nb3)
-
 
 #check over-dispersion
 #with performance package

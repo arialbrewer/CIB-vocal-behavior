@@ -276,8 +276,6 @@ summary(gam.mn4)
 
 #compare models
 AIC(gam.mn1,gam.mn2,gam.mn3,gam.mn4)  #model 2 with smoother on group size and RE of encounter is best
-lrtest(gam.mn1,gam.mn2)
-anova(gam.mn1,gam.mn2)
 
 
 #model selection with best model
@@ -322,12 +320,15 @@ plot(parameters(mn.full))
 #plots shows 95% CI with rug argument putting data at bottom of plots
 plot(mn.full, pages=1, all.terms = TRUE, rug=TRUE, residuals=TRUE, shade=TRUE, shift=coef(mn.full)[1])
 
-#check k values and residuals plots: 
-#1.Q-Q plot, 2.residual values, 3.histogram of residuals, 4.response vs fitted values
+#plots of just smoothed terms with partial residual points in blue
+draw(mn.full, residuals=TRUE)
+
+#check k values
 gam.check(mn.full)
 
-#model diagnostics with same 4 plots
+#model diagnostic plots
 appraise(mn.full)
+
 #examining qq plot further
 qq.gam(mn.full,pch=1)
 
@@ -342,10 +343,11 @@ plot(callcat_total$calf_presence,E, xlab="Calf presence", ylab="Residuals")
 plot(callcat_total$behavior,E, xlab="Behavior", ylab="Residuals")
 plot(callcat_total$encounter,E, xlab="Encounter", ylab="Residuals")
 
-#confidence intervals??
+#confidence intervals for each smoothed parameter
+confint(mn.full,parm="s(group_size)",level=0.95)
 confint(mn.full,parm="s(encounter)",level=0.95)
 
-#Manually calculate 95% confidence intervals (Coef +/- 1.96 * SE).
+#Manually calculate 95% confidence intervals for the model (Coef +/- 1.96 * SE).
 #cc for behavior-travel
 -4.90850 + 1.96*2.36445
 -4.90850 - 1.96*2.36445
