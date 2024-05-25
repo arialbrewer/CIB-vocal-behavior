@@ -12,6 +12,7 @@ library(lmtest)
 library(see)
 library(gratia)
 library(DHARMa)
+library(mgcViz)
 library(mgcv)
 
 #load data
@@ -277,8 +278,7 @@ summary(gam.mn4)
 #compare models
 AIC(gam.mn1,gam.mn2,gam.mn3,gam.mn4)  #model 2 with smoother on group size and RE of encounter is best
 
-
-#model selection with best model
+#model selection with best model (model 2-smoother group size and random effect)
 mn1 <- gam(list(call_category2 ~ behavior + s(encounter,bs="re"),
                                ~ behavior + s(encounter,bs="re")),
               data = callcat_total,
@@ -391,6 +391,10 @@ head(preds)
 
 #model matrix?
 model.matrix.gam(mn.full)
+
+
+
+
 
 
 

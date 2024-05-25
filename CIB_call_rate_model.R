@@ -377,7 +377,7 @@ mean(callrate_total$n_minute)
 var(callrate_total$n_minute)
 
 
-##### Model building - GLMM
+############ Model building - GLMM
 ##poisson test model to see coefficient of group size
 test.model<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
                  family=poisson(link="log"), data=callrate_total)
@@ -385,51 +385,48 @@ test.model<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide +
 summary(test.model)
 #coefficient= 1.1 so SC says to use offset for group size
 
-#poisson
+#Poisson without random effect
+glm.pois<-glm(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide,
+              family=poisson(link="log"), data=callrate_total)
+
+summary(glm.pois)
+
+check_overdispersion(glm.pois) #over-dispersed
+check_zeroinflation(glm.pois)  #zero-inflated
+
+#check residuals- very over-dispersed and zero-inflated
+simulationOutput.pois <- simulateResiduals(fittedModel = glm.pois, plot = T)
+
+
+#Poisson with random effect to see if that helps residual plot
 glmm.pois<-glmer(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
               family=poisson(link="log"), data=callrate_total)
 
 summary(glmm.pois)
-plot(parameters(glmm.pois))
 
-#check over-dispersion
-#with performance package
 check_overdispersion(glmm.pois) #over-dispersed
-
-#manually
-overdisp_fun <- function(model) {
-  rdf <- df.residual(model)
-  rp <- residuals(model,type="pearson")
-  Pearson.chisq <- sum(rp^2)
-  prat <- Pearson.chisq/rdf
-  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
-  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
-}
-overdisp_fun(glmm.pois)   #over-dispersed
-
-#check zero-inflation
 check_zeroinflation(glmm.pois)  #zero-inflation
 
-##poisson is over-dispersed and zero-inflated. Run negative binomial:
+#check residuals- better with random effect but still over-dispersed
+simulationOutput.pois <- simulateResiduals(fittedModel = glmm.pois, plot = T)
+
+
+##Run negative binomial:
 glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
                   data=callrate_total)
 
 summary(glmm.nb)
+plot(parameters(glmm.nb))
+
 check_overdispersion(glmm.nb)  #no over-dispersion
 check_zeroinflation(glmm.nb)   #no zero-inflation
-plot(parameters(glmm.nb))
+
+#check residuals- better with nb
+simulationOutput.pois <- simulateResiduals(fittedModel = glmm.nb, plot = T)
+
 
 #likelihood ratio test to compare models
 lrtest(glmm.pois,glmm.nb)  #nb better model
-
-#test nb with and without random effect
-glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-                  data=callrate_total)
-
-glmm.nb_no.re<-glm.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide,
-                  data=callrate_total)
-
-anova(glmm.nb,glmm.nb_no.re)   #Model with random effect is better
 
 
 #model selection on nb model
@@ -488,6 +485,10 @@ confint(glmm.nb3)
 residuals(glmm.nb3,type="response")
 plot(residuals(glmm.nb3, type="response"))   
 
+#pearsons 
+residuals(glmm.nb3,type="pearson")
+plot(residuals(glmm.nb3, type="pearson")) 
+
 #deviance 
 quantile(resid(glmm.nb3))
 plot(quantile(resid(glmm.nb3)))
@@ -495,9 +496,16 @@ plot(quantile(resid(glmm.nb3)))
 #residual deviance (deviance residuals squared and added)
 deviance(glmm.nb3)
 
-#pearsons 
-residuals(glmm.nb3,type="pearson")
-plot(residuals(glmm.nb3, type="pearson")) 
+
+#DHARMa randomized quantile residuals
+simulationOutput <- simulateResiduals(fittedModel = glmm.nb3, plot = T)
+residuals(simulationOutput)
+
+#Pplots by predictor variables
+plotResiduals(simulationOutput, form = callrate_total$behavior)
+plotResiduals(simulationOutput, form = callrate_total$calf_presence)
+plotResiduals(simulationOutput, form = callrate_total$group_size)
+
 
 #predictions
 predict(glmm.nb3)
