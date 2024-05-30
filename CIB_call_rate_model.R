@@ -395,7 +395,7 @@ check_overdispersion(glm.pois) #over-dispersed
 check_zeroinflation(glm.pois)  #zero-inflated
 
 #check residuals- very over-dispersed and zero-inflated
-simulationOutput.pois <- simulateResiduals(fittedModel = glm.pois, plot = T)
+simulateResiduals(fittedModel = glm.pois, plot = T)
 
 
 #Poisson with random effect to see if that helps residual plot
@@ -407,11 +407,14 @@ summary(glmm.pois)
 check_overdispersion(glmm.pois) #over-dispersed
 check_zeroinflation(glmm.pois)  #zero-inflation
 
+#better model includes encounter
+AIC(glm.pois,glmm.pois)
+
 #check residuals- better with random effect but still over-dispersed
-simulationOutput.pois <- simulateResiduals(fittedModel = glmm.pois, plot = T)
+simulateResiduals(fittedModel = glmm.pois, plot = T)
 
 
-##Run negative binomial:
+##Run negative binomial since pois model is overdispersed and zero-inflated:
 glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
                   data=callrate_total)
 
@@ -422,7 +425,7 @@ check_overdispersion(glmm.nb)  #no over-dispersion
 check_zeroinflation(glmm.nb)   #no zero-inflation
 
 #check residuals- better with nb
-simulationOutput.pois <- simulateResiduals(fittedModel = glmm.nb, plot = T)
+simulateResiduals(fittedModel = glmm.nb, plot = T)
 
 
 #likelihood ratio test to compare models
@@ -480,16 +483,36 @@ check_zeroinflation(glmm.nb3)
 #95% confidence intervals
 confint(glmm.nb3)
 
-###residuals     # ASK SARAH ABOUT THIS
-#raw 
+## examining residuals     # ASK SARAH ABOUT THIS
+E <- residuals(glmm.nb3)
+F <- fitted(glmm.nb3)
+
+callrate_total$rate_group_size <- cut(callrate_total$group_size, seq(0, 60, by=10))
+plot(callrate_total$rate_group_size,E, xlab="Group size",ylab="Residuals")
+plot(callrate_total$calf_presence,E, xlab="Calf presence", ylab="Residuals")
+plot(callrate_total$behavior,E, xlab="Behavior", ylab="Residuals")
+plot(callrate_total$encounter,E, xlab="Encounter", ylab="Residuals")
+
+
+#DHARMa randomized quantile residuals
+simulationOutput <- simulateResiduals(fittedModel = glmm.nb3, plot = T)
+residuals(simulationOutput)
+
+#plots by predictor variables
+plotResiduals(simulationOutput, form = callrate_total$behavior)
+plotResiduals(simulationOutput, form = callrate_total$calf_presence)
+plotResiduals(simulationOutput, form = callrate_total$group_size)
+
+
+#raw ?????
 residuals(glmm.nb3,type="response")
 plot(residuals(glmm.nb3, type="response"))   
 
-#pearsons 
+#pearsons ?????
 residuals(glmm.nb3,type="pearson")
 plot(residuals(glmm.nb3, type="pearson")) 
 
-#deviance 
+#deviance ????
 quantile(resid(glmm.nb3))
 plot(quantile(resid(glmm.nb3)))
 
@@ -497,19 +520,10 @@ plot(quantile(resid(glmm.nb3)))
 deviance(glmm.nb3)
 
 
-#DHARMa randomized quantile residuals
-simulationOutput <- simulateResiduals(fittedModel = glmm.nb3, plot = T)
-residuals(simulationOutput)
 
-#Pplots by predictor variables
-plotResiduals(simulationOutput, form = callrate_total$behavior)
-plotResiduals(simulationOutput, form = callrate_total$calf_presence)
-plotResiduals(simulationOutput, form = callrate_total$group_size)
-
-
-#predictions
+#predictions   # ASK SARAH ABOUT THIS
 predict(glmm.nb3)
-plot(predict(glmm.nb3))  # ASK SARAH ABOUT THIS
+plot(predict(glmm.nb3))  
 
 
 
