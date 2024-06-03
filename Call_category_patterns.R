@@ -152,8 +152,8 @@ ggplot(data=callrate_cattype %>% filter(encounter==16)) +
 #geom_area(aes(y=17.8,fill=behavior),alpha=0.3,show.legend=F)+
 
 
-  
-#setting behavior changes to time zero
+#filter(encounter==c(3,4)) %>%
+##### Setting behavior changes to time zero
 behav <- callrate_cattype %>% 
   select(date,minute,encounter,behavior) %>% 
   ungroup() %>% 

@@ -407,11 +407,11 @@ summary(glmm.pois)
 check_overdispersion(glmm.pois) #over-dispersed
 check_zeroinflation(glmm.pois)  #zero-inflation
 
-#better model includes encounter
-AIC(glm.pois,glmm.pois)
-
 #check residuals- better with random effect but still over-dispersed
 simulateResiduals(fittedModel = glmm.pois, plot = T)
+
+#better model includes random effect of encounter
+AIC(glm.pois,glmm.pois)
 
 
 ##Run negative binomial since pois model is overdispersed and zero-inflated:
