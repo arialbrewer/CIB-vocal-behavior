@@ -392,6 +392,23 @@ head(preds)
 #model matrix?
 model.matrix.gam(mn.full)
 
+library(ggeffects)  #can't get to work with gam multinomial????????
+#predictions by all variables
+predict_response(mn.full,terms=c("behavior","calf_presence","tide","group_size"))
+plot(predict_response(mn.full,terms=c("behavior","calf_presence","group_size")))
+
+#predictions by focal variable
+#behavior
+predict_response(mn.full,terms="behavior")
+plot(predict_response(mn.full,terms="behavior"))
+
+#calf presence
+predict_response(mn.full,terms="calf_presence")
+plot(predict_response(mn.full,terms="calf_presence"))
+
+#group size
+predict_response(mn.full,terms="group_size")
+plot(predict_response(mn.full,terms="group_size"))
 
 
 

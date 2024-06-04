@@ -9,7 +9,6 @@ library(corrplot)
 library(performance)
 library(parameters)
 library(see)
-library(DHARMa)
 library(patchwork)
 library(lmtest)
 library(lme4)
@@ -480,10 +479,12 @@ overdisp_fun(glmm.nb3)
 #check zero inflation
 check_zeroinflation(glmm.nb3)  
 
+
 #95% confidence intervals
 confint(glmm.nb3)
 
-## examining residuals     # ASK SARAH ABOUT THIS
+
+### Examining residuals     # ASK SARAH ABOUT THIS
 E <- residuals(glmm.nb3)
 F <- fitted(glmm.nb3)
 
@@ -493,8 +494,10 @@ plot(callrate_total$calf_presence,E, xlab="Calf presence", ylab="Residuals")
 plot(callrate_total$behavior,E, xlab="Behavior", ylab="Residuals")
 plot(callrate_total$encounter,E, xlab="Encounter", ylab="Residuals")
 
+#OR
 
 #DHARMa randomized quantile residuals
+library(DHARMa)
 simulationOutput <- simulateResiduals(fittedModel = glmm.nb3, plot = T)
 residuals(simulationOutput)
 
@@ -521,9 +524,30 @@ deviance(glmm.nb3)
 
 
 
-#predictions   # ASK SARAH ABOUT THIS
+## Predictions   # ASK SARAH ABOUT THIS
 predict(glmm.nb3)
 plot(predict(glmm.nb3))  
+
+#OR
+
+library(ggeffects)
+#predictions by all variables
+predict_response(glmm.nb3,terms=c("behavior","calf_presence","group_size"))
+plot(predict_response(glmm.nb3,terms=c("behavior","calf_presence","group_size")))
+
+#predictions by focal variable
+#behavior
+predict_response(glmm.nb3,terms="behavior")
+plot(predict_response(glmm.nb3,terms="behavior"))
+
+#calf presence
+predict_response(glmm.nb3,terms="calf_presence")
+plot(predict_response(glmm.nb3,terms="calf_presence"))
+
+#group size
+predict_response(glmm.nb3,terms="group_size")
+plot(predict_response(glmm.nb3,terms="group_size"))
+
 
 
 
