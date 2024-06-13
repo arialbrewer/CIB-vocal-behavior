@@ -4,7 +4,6 @@
 
 #load packages
 library(tidyverse)
-library(viridis)
 library(corrplot)
 library(performance)
 library(parameters)
@@ -93,6 +92,9 @@ callcat_type <- callcat_total %>%
   arrange(perc) %>%
   mutate(labels = scales::percent(perc))
 
+pal <- c("gold2","darkseagreen","cyan4")
+pal2 <- c("gold2","cyan4")
+
 ###independent variables
 #behavior distribution
 ggplot(data=behavior_type, aes(x="", y=number,fill=behavior)) +
@@ -102,7 +104,7 @@ ggplot(data=behavior_type, aes(x="", y=number,fill=behavior)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  scale_fill_manual(values=pal2)
 
 #calf distribution
 ggplot(data=calf_type, aes(x="", y=number,fill=calf_presence)) +
@@ -112,7 +114,7 @@ ggplot(data=calf_type, aes(x="", y=number,fill=calf_presence)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  scale_fill_manual(values=pal2)
 
 #tide distribution
 ggplot(data=tide_type, aes(x="", y=number,fill=tide)) +
@@ -122,11 +124,11 @@ ggplot(data=tide_type, aes(x="", y=number,fill=tide)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=1)
+  scale_fill_manual(values=pal2)
 
 #group size
 ggplot(data=callcat_total, aes(x=group_size)) +
-  geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
+  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
   theme_classic() +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,500,by=50)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=5)) +
@@ -141,9 +143,9 @@ ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
   theme_void() + 
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
-             show.legend = FALSE) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
-
+             show.legend = F) +
+  labs(fill="Call category") +
+  scale_fill_manual(values=pal3)
 
 ###summarize call categories by covariates
 #behavior
@@ -153,9 +155,10 @@ callcat_behavior <- callcat_total %>%
 
 ggplot(data=callcat_behavior, aes(x=behavior,y=number,fill=call_category)) + 
   geom_bar(position="stack", stat="identity") +
-  theme_minimal() +
-  labs(x="Behavior", y="Number") +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  theme_classic() +
+  labs(x="Behavior", y="Number",fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_fill_manual(values=pal)
 
 #calf presence
 callcat_calf <- callcat_total %>% 
@@ -164,9 +167,10 @@ callcat_calf <- callcat_total %>%
 
 ggplot(data=callcat_calf, aes(x=calf_presence,y=number,fill=call_category)) + 
   geom_bar(position="stack", stat="identity") +
-  theme_minimal() +
-  labs(x="Calf presence", y="Number") +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  theme_classic() +
+  labs(x="Calf presence", y="Number", fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_fill_manual(values=pal)
 
 #tide
 callcat_tide <- callcat_total %>% 
@@ -175,9 +179,10 @@ callcat_tide <- callcat_total %>%
 
 ggplot(data=callcat_tide, aes(x=tide,y=number,fill=call_category)) + 
   geom_bar(position="stack", stat="identity") +
-  theme_minimal() +
-  labs(x="Tide", y="Number") +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  theme_classic() +
+  labs(x="Tide", y="Number", fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_fill_manual(values=pal)
 
 #group size
 callcat_groupsize <- callcat_total %>% 
@@ -186,10 +191,11 @@ callcat_groupsize <- callcat_total %>%
 
 ggplot(data=callcat_groupsize, aes(x=group_size,y=number,fill=call_category)) + 
   geom_bar(position="stack", stat="identity") +
-  theme_minimal() +
-  labs(x="Group size", y="Count") +
-  scale_x_continuous(breaks=seq(0,60,by=5)) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  theme_classic() +
+  labs(x="Group size", y="Count", fill="Call category") +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=5)) +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_fill_manual(values=pal)
 
 
 ## violin plots of call category by categorical variables by group size
@@ -197,28 +203,28 @@ ggplot(data=callcat_groupsize, aes(x=group_size,y=number,fill=call_category)) +
 callcat_total %>%
   ggplot(aes(x=behavior, y=group_size, fill=call_category)) +
   geom_violin() +
-  theme_minimal() +
-  labs(x="Behavior", y="Group size") +
+  theme_classic() +
+  labs(x="Behavior", y="Group size", fill="Call category") +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  scale_fill_manual(values=pal)
 
 #call category by calf presence
 callcat_total %>%
   ggplot(aes(x=calf_presence, y=group_size, fill=call_category)) +
   geom_violin() +
-  theme_minimal() +
-  labs(x="Calf presence", y="Group size") +
+  theme_classic() +
+  labs(x="Calf presence", y="Group size", fill="Call category") +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  scale_fill_manual(values=pal)
 
 #call category by tide
 callcat_total %>%
   ggplot(aes(x=tide, y=group_size, fill=call_category)) +
   geom_violin() +
-  theme_minimal() +
-  labs(x="Tidal state", y="Group size") +
+  theme_classic() +
+  labs(x="Tidal state", y="Group size", fill="Call category") +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  scale_fill_manual(values=pal)
 
 
 

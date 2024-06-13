@@ -4,8 +4,8 @@
 
 #load packages
 library(tidyverse)
-library(viridis)
 library(corrplot)
+library(viridis)
 library(performance)
 library(parameters)
 library(see)
@@ -91,6 +91,9 @@ tide_type <- callrate_total %>%
   arrange(perc) %>%
   mutate(labels = scales::percent(perc))
 
+pal <- c("gold2","darkseagreen","cyan4")
+pal2 <- c("gold2","cyan4")
+
 ###independent variables
 #behavior distribution
 ggplot(data=behavior_type, aes(x="", y=number,fill=behavior)) +
@@ -100,7 +103,7 @@ ggplot(data=behavior_type, aes(x="", y=number,fill=behavior)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  scale_fill_manual(values=pal2)
 
 #calf distribution
 ggplot(data=calf_type, aes(x="", y=number,fill=calf_presence)) +
@@ -110,7 +113,7 @@ ggplot(data=calf_type, aes(x="", y=number,fill=calf_presence)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  scale_fill_manual(values=pal2)
 
 #tide distribution
 ggplot(data=tide_type, aes(x="", y=number,fill=tide)) +
@@ -120,11 +123,11 @@ ggplot(data=tide_type, aes(x="", y=number,fill=tide)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1)
+  scale_fill_manual(values=pal2)
 
 #group size
 ggplot(data=callrate_total, aes(x=group_size)) +
-  geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
+  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
   theme_classic() +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,400,by=50)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=5)) +
@@ -133,7 +136,7 @@ ggplot(data=callrate_total, aes(x=group_size)) +
 ###dependent variable
 #Call rate
 ggplot(data=callrate_total, aes(x=n_minute)) +
-  geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
+  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
   theme_classic() +
   scale_y_continuous(expand=c(0,0)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
@@ -141,12 +144,14 @@ ggplot(data=callrate_total, aes(x=n_minute)) +
 
 #Call rate without zeros to see shape
 nonzeros_total<-callrate_total[callrate_total$n_minute>0,]
+
 ggplot(data=nonzeros_total, aes(x=n_minute)) +
-  geom_histogram(bins=50, fill="turquoise4",color="grey",alpha=0.9) +
+  geom_histogram(bins=50, fill="cyan4",color="grey",alpha=0.9) +
   theme_classic() +
   scale_y_continuous(expand=c(0,0)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
   labs(x="Total call rate (#calls/minute)",y="Count") 
+
 
 # Per capital call rate
 # ggplot(data=callrate_total, aes(x=n_minute_group)) +
@@ -280,16 +285,17 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute, color=tide)) +
 p1 <- callrate_total %>%
   ggplot(aes(x=behavior, y=n_minute, fill=behavior)) +
   geom_violin(show.legend = FALSE) +
-  theme_minimal() +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1) +
+  theme_classic() +
+  scale_fill_manual(values=pal2) +
   labs(x="Behavior", y="Calling rate (# calls/minute)") +
   ggtitle("All")
 
 p2 <- callrate_total %>%
   ggplot(aes(x=behavior, y=n_minute, fill=behavior)) +
   geom_violin(show.legend = FALSE) +
-  theme_minimal() +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1) +
+  theme_classic() +
+  scale_fill_manual(values=pal2) +
+  scale_y_continuous(expand=c(0,0)) +
   labs(x="Behavior", y="Calling rate (# calls/minute)") +
   ggtitle("Non-zeros") +
   ylim(1,64)
@@ -300,16 +306,16 @@ p1+p2
 p3 <- callrate_total %>%
   ggplot(aes(x=calf_presence, y=n_minute, fill=calf_presence)) +
   geom_violin(show.legend = FALSE) +
-  theme_minimal() +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1) +
+  theme_classic() +
+  scale_fill_manual(values=pal2) +
   labs(x="Calf presence", y="Calling rate (# calls/minute)") +
   ggtitle("All")
 
 p4 <- callrate_total %>%
   ggplot(aes(x=calf_presence, y=n_minute, fill=calf_presence)) +
   geom_violin(show.legend = FALSE) +
-  theme_minimal() +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1) +
+  theme_classic() +
+  scale_fill_manual(values=pal2) +
   labs(x="Calf presence", y="Calling rate (# calls/minute)") +
   ggtitle("Non-zeros") +
   ylim(1,64)
@@ -320,16 +326,16 @@ p3+p4
 p5 <- callrate_total %>%
   ggplot(aes(x=tide, y=n_minute, fill=tide)) +
   geom_violin(show.legend = FALSE) +
-  theme_minimal() +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1) +
+  theme_classic() +
+  scale_fill_manual(values=pal2) +
   labs(x="Tidal state", y="Calling rate (# calls/minute)") +
   ggtitle("All")
 
 p6 <- callrate_total %>%
   ggplot(aes(x=tide, y=n_minute, fill=tide)) +
   geom_violin(show.legend = FALSE) +
-  theme_minimal() +
-  scale_fill_viridis(discrete=T,begin=0.5,end=1,direction=-1) +
+  theme_classic() +
+  scale_fill_manual(values=pal2) +
   labs(x="Tidal state", y="Calling rate (# calls/minute)") +
   ggtitle("Non-zeros") +
   ylim(1,64)
@@ -435,14 +441,29 @@ lrtest(glmm.pois,glmm.nb)  #nb better model
 glmm.nb1<-glmer.nb(n_minute ~ behavior + (1|encounter),
                   data=callrate_total)
 
+summary(glmm.nb1) 
+plot(parameters(glmm.nb1))
+
+
 glmm.nb2<-glmer.nb(n_minute ~ behavior + offset(log(group_size)) + (1|encounter),
                   data=callrate_total)
+
+summary(glmm.nb2) 
+plot(parameters(glmm.nb2))
+
 
 glmm.nb3<-glmer.nb(n_minute ~ behavior + offset(log(group_size)) + calf_presence + (1|encounter),
                   data=callrate_total)
 
+summary(glmm.nb3) 
+plot(parameters(glmm.nb3))
+
 glmm.nb4<-glmer.nb(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
                   data=callrate_total)
+
+summary(glmm.nb4) 
+plot(parameters(glmm.nb4))
+
 
 #model selection
 AIC(glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4)  #nb3 is the best model
@@ -547,8 +568,6 @@ plot(predict_response(glmm.nb3,terms="calf_presence"))
 #group size
 predict_response(glmm.nb3,terms="group_size")
 plot(predict_response(glmm.nb3,terms="group_size"))
-
-
 
 
 
