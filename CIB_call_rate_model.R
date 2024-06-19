@@ -1,6 +1,6 @@
 #Arial Brewer
 #PhD- Chapter 2 Vocal Behavior
-#Model 2- calling rate ~ behavior + group size + calf presence + tide + (1 | encounter)
+#Model 2- calling rate ~ behavior + group size + calf presence + tide + (1|encounter)
 
 #load packages
 library(tidyverse)
@@ -13,6 +13,7 @@ library(patchwork)
 library(lmtest)
 library(lme4)
 library(MASS)
+library(DHARMa)
 
 #load data
 setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -46,14 +47,14 @@ callrate_total <- data_total %>%
          #n_minute_group = n_minute/group_size)
 
   
-###Test for correlation between variables
-#create duplicate data for binary variables
+####Test for correlation between variables
+##create duplicate data for binary variables
 callrate_total2 <- data_total %>%
   mutate(num.calls = case_when(is.na(call_category)~0,TRUE~1)) %>% 
   group_by(date,time,encounter,tide,group_size,calf_presence,behavior) %>% 
   summarise(n_minute = sum(num.calls))
 
-#change categorical variables to binary
+##change categorical variables to binary
 #Mill=0, Travel=1
 callrate_total2$behavior <- ifelse(callrate_total2$behavior=="Travel",1,0)
 
@@ -343,7 +344,7 @@ p6 <- callrate_total %>%
 p5+p6
 
 
-###explore mean patterns 
+###explore mean pattern
 groupsize_mean <- callrate_total %>% 
   group_by(group_size) %>% 
   summarise(mean_callrate=mean(n_minute),
@@ -376,8 +377,7 @@ stats.tide <- callrate_total %>%
             #relative_mean=mean(n_minute_group),relative_sd=sd(n_minute_group)) 
 
 
-#possible over-dispersion?
-## Calling rate (# calls/minute)
+#possible over-dispersion in calling rate- test with model
 mean(callrate_total$n_minute)
 var(callrate_total$n_minute)
 
@@ -505,7 +505,8 @@ check_zeroinflation(glmm.nb3)
 confint(glmm.nb3)
 
 
-### Examining residuals     # ASK SARAH ABOUT THIS
+############ Model diagnostics
+# Examining residuals     # ASK SARAH ABOUT THIS
 E <- residuals(glmm.nb3)
 F <- fitted(glmm.nb3)
 
@@ -518,7 +519,6 @@ plot(callrate_total$encounter,E, xlab="Encounter", ylab="Residuals")
 #OR
 
 #DHARMa randomized quantile residuals
-library(DHARMa)
 simulationOutput <- simulateResiduals(fittedModel = glmm.nb3, plot = T)
 residuals(simulationOutput)
 
@@ -545,7 +545,7 @@ deviance(glmm.nb3)
 
 
 
-## Predictions   # ASK SARAH ABOUT THIS
+############ Predictions   # ASK SARAH ABOUT THIS
 predict(glmm.nb3)
 plot(predict(glmm.nb3))  
 
@@ -553,8 +553,11 @@ plot(predict(glmm.nb3))
 
 library(ggeffects)
 #predictions by all variables
-predict_response(glmm.nb3,terms=c("behavior","calf_presence","group_size"))
-plot(predict_response(glmm.nb3,terms=c("behavior","calf_presence","group_size")))
+pred <- predict_response(glmm.nb3,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
+print(pred,collapse_ci=TRUE)
+plot(pred)
+
+
 
 #predictions by focal variable
 #behavior
@@ -568,6 +571,17 @@ plot(predict_response(glmm.nb3,terms="calf_presence"))
 #group size
 predict_response(glmm.nb3,terms="group_size")
 plot(predict_response(glmm.nb3,terms="group_size"))
+
+
+
+
+
+
+
+
+
+
+
 
 
 
