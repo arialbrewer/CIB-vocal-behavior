@@ -1,6 +1,6 @@
 #Arial Brewer
 #PhD- Chapter 2 Vocal Behavior
-#Model 1- call category ~ behavior + group size + calf presence + tide + (1 | encounter)
+#Model 1- call category ~ behavior + group size + calf presence + tide + (1|encounter)
 
 #load packages
 library(tidyverse)
@@ -43,12 +43,12 @@ callcat_total <- behavior_data %>%
 
 
 ###Test for correlation between covariates
-#create duplicate dataframe
+##create duplicate dataframe
 callcat_total2 <- behavior_data %>% 
   left_join(acoustic_data, by = c("date","time"), multiple = "all") %>% 
   na.omit()
 
-#change categorical variables to binary
+##change categorical variables to binary
 #Mill=0, Travel=1
 callcat_total2$behavior <- ifelse(callcat_total2$behavior=="Travel",1,0)
 
@@ -145,7 +145,7 @@ ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
              position = position_stack(vjust = 0.5),
              show.legend = F) +
   labs(fill="Call category") +
-  scale_fill_manual(values=pal3)
+  scale_fill_manual(values=pal)
 
 ###summarize call categories by covariates
 #behavior
@@ -282,9 +282,9 @@ gam.mn4 <- gam(list(call_category2 ~ behavior + group_size + calf_presence + tid
 summary(gam.mn4)
 
 #compare models
-AIC(gam.mn1,gam.mn2,gam.mn3,gam.mn4)  #model 2 with smoother on group size and RE of encounter is best
+AIC(gam.mn1,gam.mn2,gam.mn3,gam.mn4)  #model 2 with smoother on group size and random effect is best
 
-#model selection with best model (model 2-smoother group size and random effect)
+#model selection with best model 
 mn1 <- gam(list(call_category2 ~ behavior + s(encounter,bs="re"),
                                ~ behavior + s(encounter,bs="re")),
               data = callcat_total,
@@ -323,37 +323,18 @@ summary(mn.full)
 #model summary plots
 plot(parameters(mn.full))
 
-#plots shows 95% CI with rug argument putting data at bottom of plots
-plot(mn.full, pages=1, all.terms = TRUE, rug=TRUE, residuals=TRUE, shade=TRUE, shift=coef(mn.full)[1])
+##confidence intervals 
+#smoothed parameter (group size)
+ci.group <- confint(mn.full,parm="s(group_size)",level=0.95)
 
-#plots of just smoothed terms with partial residual points in blue
-draw(mn.full, residuals=TRUE)
+ggplot(ci.group, aes(x=group_size, y=.estimate))+
+  geom_line() +
+  geom_ribbon(aes(ymin=.lower_ci, ymax=.upper_ci),linetype=2, alpha=0.2) +
+  theme_classic() +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(expand=c(0,0))
 
-#check k values
-gam.check(mn.full)
-
-#model diagnostic plots
-appraise(mn.full)
-
-#examining qq plot further
-qq.gam(mn.full,pch=1)
-
-#examining residuals- Dave said all these look good!
-E <- residuals(mn.full)
-F <- fitted(mn.full)
-
-callcat_total$cat_group_size <- cut(callcat_total$group_size, seq(0, 60, by=10))
-plot(callcat_total$cat_group_size,E, xlab="Group size",ylab="Residuals")
-plot(callcat_total$tide,E, xlab="Tide", ylab="Residuals")
-plot(callcat_total$calf_presence,E, xlab="Calf presence", ylab="Residuals")
-plot(callcat_total$behavior,E, xlab="Behavior", ylab="Residuals")
-plot(callcat_total$encounter,E, xlab="Encounter", ylab="Residuals")
-
-#confidence intervals for each smoothed parameter
-confint(mn.full,parm="s(group_size)",level=0.95)
-confint(mn.full,parm="s(encounter)",level=0.95)
-
-#Manually calculate 95% confidence intervals for the model (Coef +/- 1.96 * SE).
+#Manually calculate 95% CI for non-smoothed variables (Coef +/- 1.96 * SE).
 #cc for behavior-travel
 -4.90850 + 1.96*2.36445
 -4.90850 - 1.96*2.36445
@@ -379,7 +360,35 @@ confint(mn.full,parm="s(encounter)",level=0.95)
 -0.17028 - 1.96*1.80379
 
 
-#predictions (1=ws, 2=cc, 3=pc)
+#### Model-diagnostics- residual plots 
+plot(mn.full, pages=1, all.terms = TRUE, rug=FALSE, residuals=TRUE, shade=TRUE, shift=coef(mn.full)[1])
+
+#plots of just smoothed terms with partial residual points in blue
+draw(mn.full, residuals=TRUE)
+
+#check k values
+gam.check(mn.full)
+
+#model diagnostic plots
+appraise(mn.full)
+
+#examining qq plot further
+qq.gam(mn.full,pch=1)
+
+#examining residuals- Dave said all these look good!
+E <- residuals(mn.full)
+F <- fitted(mn.full)
+
+callcat_total$cat_group_size <- cut(callcat_total$group_size, seq(0, 60, by=10))
+plot(callcat_total$cat_group_size,E, xlab="Group size",ylab="Residuals")
+plot(callcat_total$tide,E, xlab="Tide", ylab="Residuals")
+plot(callcat_total$calf_presence,E, xlab="Calf presence", ylab="Residuals")
+plot(callcat_total$behavior,E, xlab="Behavior", ylab="Residuals")
+plot(callcat_total$encounter,E, xlab="Encounter", ylab="Residuals")
+
+
+
+#### Predictions (1=ws, 2=cc, 3=pc)    #ASK SARAH ABOUT THIS
 preds <- predict(mn.full, type="response")
 boxplot(preds, type="response")
 
@@ -400,8 +409,9 @@ model.matrix.gam(mn.full)
 
 library(ggeffects)  #can't get to work with gam multinomial????????
 #predictions by all variables
-predict_response(mn.full,terms=c("behavior","calf_presence","tide","group_size"))
-plot(predict_response(mn.full,terms=c("behavior","calf_presence","group_size")))
+pred <- predict_response(mn.full,terms=c("behaviorTravel","calf_presenceyes","tideFlood","group_size"))
+
+plot(pred)
 
 #predictions by focal variable
 #behavior
