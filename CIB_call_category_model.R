@@ -5,14 +5,13 @@
 #load packages
 library(tidyverse)
 library(corrplot)
+library(mgcv)
+library(mgcViz)
 library(performance)
 library(parameters)
-library(lmtest)
 library(see)
 library(gratia)
 library(DHARMa)
-library(mgcViz)
-library(mgcv)
 
 #load data
 setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -243,85 +242,118 @@ levels(callcat_total$call_category)
 all(callcat_total$call_category2 %in% c(0L, 1L, 2L))
 
 ##K=number of levels of response-1. Because there is K=2 we repeat the formula twice within a list
-#with smoother on group size (no random effect)
-gam.mn1 <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + tide,
-                                   ~ behavior + s(group_size) + calf_presence + tide),
+
+#with smoother on group size
+gam.mn1 <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re"),
+                                   ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re")),
                data = callcat_total,
                family = multinom(K=2),
                method = "REML",
                optimizer = "efs")
 summary(gam.mn1)
 
-#with smoother on group size and random effect
-gam.mn2 <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re"),
-                                   ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re")),
-               data = callcat_total,
-               family = multinom(K=2),
-               method = "REML",
-               optimizer = "efs")
-summary(gam.mn2)
-
-#without smoother on group size (no random effect)
-gam.mn3 <- gam(list(call_category2 ~ behavior + group_size + calf_presence + tide,
-                                   ~ behavior + group_size + calf_presence + tide),
-               data = callcat_total,
-               family = multinom(K=2),
-               method = "REML",
-               optimizer = "efs")
-
-summary(gam.mn3)
-
-#without smoother on group size and random effect
-gam.mn4 <- gam(list(call_category2 ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re"),
+#without smoother on group size
+gam.mn2 <- gam(list(call_category2 ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re"),
                                    ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re")),
                data = callcat_total,
                family = multinom(K=2),
                method = "REML",
                optimizer = "efs")
 
-summary(gam.mn4)
+summary(gam.mn2)
 
 #compare models
-AIC(gam.mn1,gam.mn2,gam.mn3,gam.mn4)  #model 2 with smoother on group size and random effect is best
+AIC(gam.mn1,gam.mn2)  #model 1 with smoother on group size and random effect is best
 
-#model selection with best model 
+
+
+#model selection with best model (with group size smoother)
+#if decide to go with smoother on group size, add to model selection below
+
+################################################################################################
+#model selection with best model (without group size smoother) 
+mn0 <- gam(list(call_category2 ~ s(encounter,bs="re"),
+                               ~ s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
 mn1 <- gam(list(call_category2 ~ behavior + s(encounter,bs="re"),
                                ~ behavior + s(encounter,bs="re")),
-              data = callcat_total,
-              family = multinom(K=2),
-              method = "REML",
-              optimizer = "efs")
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
 
-mn2 <- gam(list(call_category2 ~ behavior + s(group_size) + s(encounter,bs="re"),
-                               ~ behavior + s(group_size) + s(encounter,bs="re")),
-           data = callcat_total,
-           family = multinom(K=2),
-           method = "REML",
-           optimizer = "efs")
+mn2 <- gam(list(call_category2 ~ behavior + calf_presence + s(encounter,bs="re"),
+                               ~ behavior + calf_presence + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
 
-mn3 <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + s(encounter,bs="re"),
-                               ~ behavior + s(group_size) + calf_presence + s(encounter,bs="re")),
-           data = callcat_total,
-           family = multinom(K=2),
-           method = "REML",
-           optimizer = "efs")
+mn3 <- gam(list(call_category2 ~ behavior + calf_presence + group_size + s(encounter,bs="re"),
+                               ~ behavior + calf_presence + group_size + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
 
-mn.full <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re"),
-                                   ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re")),
-           data = callcat_total,
-           family = multinom(K=2),
-           method = "REML",
-           optimizer = "efs")
+mn4 <- gam(list(call_category2 ~ behavior + calf_presence + group_size + tide + s(encounter,bs="re"),
+                               ~ behavior + calf_presence + group_size + tide + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn5 <- gam(list(call_category2 ~ calf_presence + s(encounter,bs="re"),
+                               ~ calf_presence + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn6 <- gam(list(call_category2 ~ calf_presence + group_size + s(encounter,bs="re"),
+                               ~ calf_presence + group_size + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn7 <- gam(list(call_category2 ~ calf_presence + group_size + tide + s(encounter,bs="re"),
+                               ~ calf_presence + group_size + tide + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn8 <- gam(list(call_category2 ~ calf_presence + tide + s(encounter,bs="re"),
+                               ~ calf_presence + tide + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn9 <- gam(list(call_category2 ~ group_size + s(encounter,bs="re"),
+                               ~ group_size + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn10 <- gam(list(call_category2 ~ group_size + tide + s(encounter,bs="re"),
+                                ~ group_size + tide + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn11 <- gam(list(call_category2 ~ group_size + behavior + s(encounter,bs="re"),
+                                ~ group_size + behavior + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn12 <- gam(list(call_category2 ~ group_size + behavior + tide + s(encounter,bs="re"),
+                                ~ group_size + behavior + tide + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn13 <- gam(list(call_category2 ~ tide + s(encounter,bs="re"),
+                                ~ tide + s(encounter,bs="re")),
+            data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn14 <- gam(list(call_category2 ~ tide + behavior + s(encounter,bs="re"),
+                                ~ tide + behavior + s(encounter,bs="re")),
+            data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+mn15 <- gam(list(call_category2 ~ tide + behavior + calf_presence + s(encounter,bs="re"),
+                                ~ tide + behavior + calf_presence + s(encounter,bs="re")),
+            data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
 
 
 #model selection
-AIC(mn1,mn2,mn3,mn.full)    #full model is best model
+AIC(mn0,mn1,mn2,mn3,mn4,mn5,mn6,mn7,mn8,mn9,mn10,mn11,mn12,mn13,mn14,mn15)  
+
+#best models
+AIC(mn2,mn3,mn4,mn15) 
+#mn4 is best which is the full model
+#####################################################################
+
+
+
 
 #model summary
-summary(mn.full)
+summary(mn4)
 
 #model summary plots
-plot(parameters(mn.full))
+plot(parameters(mn4))
 
 ##confidence intervals 
 #smoothed parameter (group size)
@@ -367,17 +399,17 @@ plot(mn.full, pages=1, all.terms = TRUE, rug=FALSE, residuals=TRUE, shade=TRUE, 
 draw(mn.full, residuals=TRUE)
 
 #check k values
-gam.check(mn.full)
+gam.check(mn4)
 
 #model diagnostic plots
-appraise(mn.full)
+appraise(mn4)
 
 #examining qq plot further
 qq.gam(mn.full,pch=1)
 
 #examining residuals- Dave said all these look good!
-E <- residuals(mn.full)
-F <- fitted(mn.full)
+E <- residuals(mn4)
+F <- fitted(mn4)
 
 callcat_total$cat_group_size <- cut(callcat_total$group_size, seq(0, 60, by=10))
 plot(callcat_total$cat_group_size,E, xlab="Group size",ylab="Residuals")
@@ -397,15 +429,14 @@ preds <- apply(preds, 1, which.max)
 plot(mn.full$y, preds-1, xlab="observed", ylab="highest probability category")
 abline(a=0,b=1, col="red")
 
-#standard deviations of smoothed variables (Dave added this)
-gam.vcomp(mn.full)
 
-## predictions with standard errors
-preds <- predict(mn.full, type="response", se=TRUE)
+
+## predictions 
+preds <- predict(mn4, type="response", se=TRUE)
 head(preds)
 
 #model matrix?
-model.matrix.gam(mn.full)
+model.matrix.gam(mn4)
 
 library(ggeffects)  #can't get to work with gam multinomial????????
 #predictions by all variables
@@ -425,6 +456,19 @@ plot(predict_response(mn.full,terms="calf_presence"))
 #group size
 predict_response(mn.full,terms="group_size")
 plot(predict_response(mn.full,terms="group_size"))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -503,110 +547,3 @@ summary(binom_model2)
 
 
 
-
-####################################test without large group size of 53
-test <- read.csv("callcat_total_wo big group.csv") %>% 
-  mutate(behavior=as.factor(behavior),
-         calf_presence=as.factor(calf_presence),
-         tide=as.factor(tide),
-         encounter=as.factor(encounter),
-         group_size=as.integer(group_size),
-         call_category=as.factor(call_category))
-
-#default levels are cc,pc,ws
-levels(test$call_category)
-
-#relevel so ws is level 0 (reference level)
-test$call_category <- relevel(test$call_category,ref = "ws")
-test$call_category2 <- as.numeric(test$call_category)-1
-levels(test$call_category)
-
-#categories must be coded 0 to K
-all(test$call_category2 %in% c(0L, 1L, 2L))
-
-##K=number of levels of response-1. Because there is K=2 we repeat the formula twice within a list
-#with smoother on group size
-test.mn1 <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re"),
-                    ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re")),
-               data = test,
-               family = multinom(K=2),
-               method = "REML",
-               optimizer = "efs")
-summary(test.mn1)
-
-#without smoother on group size
-test.mn2 <- gam(list(call_category2 ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re"),
-                    ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re")),
-               data = test,
-               family = multinom(K=2),
-               method = "REML",
-               optimizer = "efs")
-
-summary(test.mn2)
-
-#compare models
-AIC(test.mn1,test.mn2)  #model 1 with smoother on group size is best
-
-
-#model selection with best model
-test.mn1 <- gam(list(call_category2 ~ behavior + s(encounter,bs="re"),
-                ~ behavior + s(encounter,bs="re")),
-           data = test,
-           family = multinom(K=2),
-           method = "REML",
-           optimizer = "efs")
-
-test.mn2 <- gam(list(call_category2 ~ behavior + s(group_size) + s(encounter,bs="re"),
-                ~ behavior + s(group_size) + s(encounter,bs="re")),
-           data = test,
-           family = multinom(K=2),
-           method = "REML",
-           optimizer = "efs")
-
-test.mn3 <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + s(encounter,bs="re"),
-                ~ behavior + s(group_size) + calf_presence + s(encounter,bs="re")),
-           data = test,
-           family = multinom(K=2),
-           method = "REML",
-           optimizer = "efs")
-
-test.mn.full <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re"),
-                    ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re")),
-               data = test,
-               family = multinom(K=2),
-               method = "REML",
-               optimizer = "efs")
-
-
-#model selection
-AIC(test.mn1,test.mn2,test.mn3,test.mn.full)    #full model is best model
-
-#model summary
-summary(test.mn.full)
-
-
-#model summary plots
-plot(parameters(test.mn.full))
-
-#plots shows 95% CI with rug argument putting data at bottom of plots
-plot(test.mn.full, pages=1, all.terms = TRUE, rug=TRUE, residuals=TRUE, shade=TRUE, shift=coef(mn.full)[1])
-
-#check k values and residuals plots: 
-#1.Q-Q plot, 2.residual values, 3.histogram of residuals, 4.response vs fitted values
-gam.check(test.mn.full)
-
-#model diagnostics with same 4 plots
-appraise(test.mn.full)
-#examining qq plot further
-qq.gam(test.mn.full,pch=1)
-
-#examining residuals- Dave said all these look good!
-E <- residuals(test.mn.full)
-F <- fitted(test.mn.full)
-
-test$cat_group_size <- cut(test$group_size, seq(0,30, by=10))
-plot(test$cat_group_size,E, xlab="Group size",ylab="Residuals")
-plot(test$tide,E, xlab="Tide", ylab="Residuals")
-plot(test$calf_presence,E, xlab="Calf presence", ylab="Residuals")
-plot(test$behavior,E, xlab="Behavior", ylab="Residuals")
-plot(test$encounter,E, xlab="Encounter", ylab="Residuals")
