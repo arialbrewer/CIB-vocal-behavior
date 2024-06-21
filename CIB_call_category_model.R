@@ -243,35 +243,7 @@ all(callcat_total$call_category2 %in% c(0L, 1L, 2L))
 
 ##K=number of levels of response-1. Because there is K=2 we repeat the formula twice within a list
 
-#with smoother on group size
-gam.mn1 <- gam(list(call_category2 ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re"),
-                                   ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re")),
-               data = callcat_total,
-               family = multinom(K=2),
-               method = "REML",
-               optimizer = "efs")
-summary(gam.mn1)
-
-#without smoother on group size
-gam.mn2 <- gam(list(call_category2 ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re"),
-                                   ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re")),
-               data = callcat_total,
-               family = multinom(K=2),
-               method = "REML",
-               optimizer = "efs")
-
-summary(gam.mn2)
-
-#compare models
-AIC(gam.mn1,gam.mn2)  #model 1 with smoother on group size and random effect is best
-
-
-
-#model selection with best model (with group size smoother)
-#if decide to go with smoother on group size, add to model selection below
-
-################################################################################################
-#model selection with best model (without group size smoother) 
+#model selection 
 mn0 <- gam(list(call_category2 ~ s(encounter,bs="re"),
                                ~ s(encounter,bs="re")),
            data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
@@ -337,17 +309,12 @@ mn15 <- gam(list(call_category2 ~ tide + behavior + calf_presence + s(encounter,
             data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
 
 
-
 #model selection
 AIC(mn0,mn1,mn2,mn3,mn4,mn5,mn6,mn7,mn8,mn9,mn10,mn11,mn12,mn13,mn14,mn15)  
 
 #best models
 AIC(mn2,mn3,mn4,mn15) 
 #mn4 is best which is the full model
-#####################################################################
-
-
-
 
 #model summary
 summary(mn4)
@@ -355,57 +322,51 @@ summary(mn4)
 #model summary plots
 plot(parameters(mn4))
 
-##confidence intervals 
-#smoothed parameter (group size)
-ci.group <- confint(mn.full,parm="s(group_size)",level=0.95)
-
-ggplot(ci.group, aes(x=group_size, y=.estimate))+
-  geom_line() +
-  geom_ribbon(aes(ymin=.lower_ci, ymax=.upper_ci),linetype=2, alpha=0.2) +
-  theme_classic() +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_continuous(expand=c(0,0))
-
-#Manually calculate 95% CI for non-smoothed variables (Coef +/- 1.96 * SE).
+##confidence intervals 95% = (Coef +/- 1.96 * SE).
 #cc for behavior-travel
--4.90850 + 1.96*2.36445
--4.90850 - 1.96*2.36445
+-2.469e+00 + 1.96*5.634e-01
+-2.469e+00 - 1.96*5.634e-01
 
 #cc for calf presence-yes
-27.02764 + 1.96*112.49524
-27.02764 - 1.96*112.49524
+2.174e+01 + 1.96*1.028e+05
+2.174e+01 - 1.96*1.028e+05
+
+#cc for group size
+5.079e-02 + 1.96*3.980e-02
+5.079e-02 - 1.96*3.980e-02
 
 #cc for tide-flood
-4.25866 + 1.96*3.28930
-4.25866 - 1.96*3.28930
+2.473e-01 + 1.96*1.540e+00
+2.473e-01 - 1.96*1.540e+00
 
 #pc for behavior-travel
-0.03963 + 1.96*0.37791
-0.03963 - 1.96*0.37791
+-9.265e-01 + 1.96*1.969e-01
+-9.265e-01 - 1.96*1.969e-01
 
 #pc for calf presence-yes
--2.07098 + 1.96*0.87053
--2.07098 - 1.96*0.87053
+-2.674e+00 + 1.96*4.562e-01
+-2.674e+00 - 1.96*4.562e-01
+
+#pc for group size
+2.885e-03 + 1.96*5.103e-03
+2.885e-03 - 1.96*5.103e-03
 
 #pc for tide-flood
--0.17028 + 1.96*1.80379
--0.17028 - 1.96*1.80379
+-9.783e-01 + 1.96*1.339e+00
+-9.783e-01 - 1.96*1.339e+00
 
 
 #### Model-diagnostics- residual plots 
-plot(mn.full, pages=1, all.terms = TRUE, rug=FALSE, residuals=TRUE, shade=TRUE, shift=coef(mn.full)[1])
+plot(mn4, pages=1, all.terms = TRUE, rug=FALSE, residuals=TRUE, shade=TRUE, shift=coef(mn4)[1])
 
-#plots of just smoothed terms with partial residual points in blue
-draw(mn.full, residuals=TRUE)
+#plots of smoothed terms (random effect of encounter)
+draw(mn4, residuals=TRUE)
 
 #check k values
 gam.check(mn4)
 
-#model diagnostic plots
-appraise(mn4)
-
 #examining qq plot further
-qq.gam(mn.full,pch=1)
+qq.gam(mn4,pch=1)
 
 #examining residuals- Dave said all these look good!
 E <- residuals(mn4)
@@ -420,42 +381,18 @@ plot(callcat_total$encounter,E, xlab="Encounter", ylab="Residuals")
 
 
 
-#### Predictions (1=ws, 2=cc, 3=pc)    #ASK SARAH ABOUT THIS
-preds <- predict(mn.full, type="response")
+#### Predictions (1=ws, 2=cc, 3=pc)    
+preds <- predict(mn4, type="response")
+head(preds)
 boxplot(preds, type="response")
 
-#Dave added this, not sure what it's showing?
-preds <- apply(preds, 1, which.max)
-plot(mn.full$y, preds-1, xlab="observed", ylab="highest probability category")
-abline(a=0,b=1, col="red")
 
 
+###Sarah recommends this way
+#set up prediction data
+newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(0:50),tide=c("ebb","flood"))
 
-## predictions 
-preds <- predict(mn4, type="response", se=TRUE)
-head(preds)
 
-#model matrix?
-model.matrix.gam(mn4)
-
-library(ggeffects)  #can't get to work with gam multinomial????????
-#predictions by all variables
-pred <- predict_response(mn.full,terms=c("behaviorTravel","calf_presenceyes","tideFlood","group_size"))
-
-plot(pred)
-
-#predictions by focal variable
-#behavior
-predict_response(mn.full,terms="behavior")
-plot(predict_response(mn.full,terms="behavior"))
-
-#calf presence
-predict_response(mn.full,terms="calf_presence")
-plot(predict_response(mn.full,terms="calf_presence"))
-
-#group size
-predict_response(mn.full,terms="group_size")
-plot(predict_response(mn.full,terms="group_size"))
 
 
 

@@ -399,7 +399,7 @@ check_zeroinflation(glmm.pois)  #zero-inflation
 simulateResiduals(fittedModel = glmm.pois, plot = T)
 
 
-##Negative binomial since poisson model is over-dispersed and zero-inflated:
+##Fit negative binomial since poisson model is over-dispersed and zero-inflated:
 glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
                   data=callrate_total)
 
@@ -411,7 +411,7 @@ check_zeroinflation(glmm.nb)   #no zero-inflation
 simulateResiduals(fittedModel = glmm.nb, plot = T)
 
 
-####model selection on nb model
+####model selection for fixed effects
 glmm.nb0<-glmer.nb(n_minute ~ offset(log(group_size)) + (1|encounter),
                    data=callrate_total)
 
@@ -438,7 +438,8 @@ glmm.nb7<-glmer.nb(n_minute ~ offset(log(group_size)) + tide + (1|encounter),
 
 
 #model selection
-AIC(glmm.nb0,glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4,glmm.nb5,glmm.nb6,glmm.nb7)  #nb2 is the best model (no tide)
+AIC(glmm.nb0,glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4,glmm.nb5,glmm.nb6,glmm.nb7) #nb2 is the best model (no tide)
+drop1(glmm.nb,test="Chi")
 
 #model summary
 summary(glmm.nb2) 
@@ -468,7 +469,7 @@ check_overdispersion(glmm.nb2)
 check_zeroinflation(glmm.nb2)  
 
 #95% confidence intervals
-confint(glmm.nb2)
+confint(glmm.nb2, level=0.95)
 
 
 ################### Model diagnostics
@@ -476,6 +477,10 @@ confint(glmm.nb2)
 X2 <- sum((callrate_total$n_minute - fitted(glmm.nb2))^2 / fitted(glmm.nb2))
 df <- length(callrate_total$n_minute)-length(coef(glmm.nb2))
 pchisq(X2, df,lower.tail = FALSE)
+
+#from another website
+pchisq(deviance(glmm.nb2),df.residual(glmm.nb2),lower=FALSE)
+
 
 #examining residuals    
 E <- residuals(glmm.nb2)
@@ -496,126 +501,109 @@ check_model(glmm.nb2)
 
 
 
-############ Predictions   # ASK SARAH ABOUT THIS
-predict(glmm.nb3)
-plot(predict(glmm.nb3))  
-
-#OR
-
+############ Predictions   
 library(ggeffects)
 #predictions by all variables
-pred <- predict_response(glmm.nb3,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
+pred <- predict_response(glmm.nb2,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
 print(pred,collapse_ci=TRUE)
 plot(pred)
 
 
+###Sarah recommends this way
+#set up prediction data
+newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(0:50))
 
-#predictions by focal variable
-#behavior
-predict_response(glmm.nb3,terms="behavior")
-plot(predict_response(glmm.nb3,terms="behavior"))
-
-#calf presence
-predict_response(glmm.nb3,terms="calf_presence")
-plot(predict_response(glmm.nb3,terms="calf_presence"))
-
-#group size
-predict_response(glmm.nb3,terms="group_size")
-plot(predict_response(glmm.nb3,terms="group_size"))
-
-
-
-
-
-
-
-
-
+#number of bootstrap samples and set up to store the results 
+boot.samps <- 500 
+pv <- matrix(NA,nrow=boot.samps,ncol=nrow(newData))
+#simulate from the model, update the model with new predictor 
+for(j in 1:boot.samps){
+  y <- unlist(simulate(glmm.nb2))
+  b.mod <- update(glmm.nb2,y ~ .)
+  #then predict from the updated model if the bootstrap sample converged 
+  if(is.null(summary(b.mod)$optinfo$conv$lme4$messages)==TRUE){
+    RE.sd <- as.data.frame(VarCorr(b.mod))$sdcor[1]
+    pv[j,] <- (1/(1+exp(-predict(b.mod, re.form = ~0, newData) + rnorm(1,0,sd=RE.sd))))
+  }
+}
+pv.mean <- apply(pv,2,function(x)mean(x,na.rm=TRUE))
+pv.lowr <- apply(pv,2,function(x)quantile(x,p=0.025,na.rm=TRUE))
+pv.uppr <- apply(pv,2,function(x)quantile(x,p=0.975,na.rm=TRUE))
 
 
 
+#Plot predictions 
+all.plot <- data.frame(newData[c(1:3),],pv.mean[c(1:3)],pv.lowr[c(1:3)],pv.uppr[c(1:3)],
+                       newData[c(4:6),],pv.mean[c(4:6)],pv.lowr[c(4:6)],pv.uppr[c(4:6)],
+                       newData[c(7:9),],pv.mean[c(7:9)],pv.lowr[c(7:9)],pv.uppr[c(7:9)],
+                       newData[c(10:12),],pv.mean[c(10:12)],pv.lowr[c(10:12)],pv.uppr[c(10:12)],
+                       newData[c(13:15),],pv.mean[c(13:15)],pv.lowr[c(13:15)],pv.uppr[c(13:15)],
+                       newData[c(16:18),],pv.mean[c(16:18)],pv.lowr[c(16:18)],pv.uppr[c(16:18)])
+colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
+                        "behavior2","calf2","group2","mean2","lwr2","uppr2",
+                        "behavior3","calf3","group3","mean3","lwr3","uppr3",
+                        "behavior4","calf4","group4","mean4","lwr4","uppr4",
+                        "behavior5","calf5","group5","mean5","lwr5","uppr5",
+                        "behavior6","calf6","group6","mean6","lwr6","uppr6")
 
 
 
 
-########## OR WE CAN USE GLMMTMB and compare with above
-library(glmmTMB)
-
-#to show that the effect of group size is 1, meaning a 1:1 ratio of group size to calling rate
-#with every one individual added, the calling rate increases by 1
-test<-glmmTMB(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
-              family=poisson, data=callrate_total)
-summary(test)
 
 
-#poisson
-pois.tmb<-glmmTMB(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-                 family=poisson, data=callrate_total)
 
-summary(pois.tmb)
-check_overdispersion(pois.tmb)  #overdispersed
-check_zeroinflation(pois.tmb)   #zero-inflated
+plot1 <- ggplot(data = all.plot) +
+  geom_bar(aes(x=behavior1, y = mean1)) + 
+  geom_ribbon(aes(x=behavior1, ymin = lwr1, ymax = uppr1), fill = "blue", alpha = 0.4) +
+  geom_line(aes(x=behavior4, y = mean4)) + 
+  geom_ribbon(aes(x=behavior4, ymin = lwr4, ymax = uppr4), fill = "red", alpha = 0.4) +
+  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Low,Rear=No")) +
+  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Low,Rear=Yes")) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        text = element_text(size = 16),legend.text = element_text(size=16),
+        legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
 
-#negative binomial
-nb.tmb<-glmmTMB(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-               family=nbinom2, data=callrate_total)
+plot2 <- ggplot(data = all.plot) +
+  geom_line(aes(x=Kin2, y = mean2)) + 
+  geom_ribbon(aes(x=Kin2, ymin = lwr2, ymax = uppr2), fill = "blue", alpha = 0.4) +
+  geom_line(aes(x=Kin5, y = mean5)) + 
+  geom_ribbon(aes(x=Kin5, ymin = lwr5, ymax = uppr5), fill = "red", alpha = 0.4) +
+  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Mid,Rear=No")) +
+  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Mid,Rear=Yes")) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size = 16),legend.text = element_text(size=16),legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
 
-summary(nb.tmb)
-check_overdispersion(nb.tmb)  #not overdispersed
-check_zeroinflation(nb.tmb)   #not zero-inflated
+plot3 <- ggplot(data = all.plot) +
+  geom_line(aes(x=Kin3, y = mean3)) + 
+  geom_ribbon(aes(x=Kin3, ymin = lwr3, ymax = uppr3), fill = "blue", alpha = 0.4) +
+  geom_line(aes(x=Kin6, y = mean6)) + 
+  geom_ribbon(aes(x=Kin6, ymin = lwr6, ymax = uppr6), fill = "red", alpha = 0.4) +
+  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Hi,Rear=No")) +
+  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Hi,Rear=Yes")) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size = 16),legend.text = element_text(size=16),legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
 
-#zero-inflated negative binomial
-zinb.tmb<-glmmTMB(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-                 ziformula= ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-                 family=nbinom2, data=callrate_total)
-
-##model convergence problem
-summary(zinb.tmb)
-check_overdispersion(zinb.tmb)  #not overdispersed
-check_zeroinflation(zinb.tmb)   #not zero-inflated
-
-
-#likelihood ratio test on models, can't use AIC on models with different distributions
-lrtest(pois.tmb,nb.tmb,zinb.tmb)    #nb best model
+plots <- ggarrange(plot1,plot2,plot3,common.legend=TRUE, legend = "right")
+annotate_figure(plots,
+                left = text_grob("Pr(fertile)", color = "black", size = 18, rot = 90),
+                bottom = text_grob("Scaled Kinship",color = "black",size = 18))
 
 
-#nb model selection for variables
-tmbnb.1<-glmmTMB(n_minute ~ group_size + (1|encounter),
-               family=nbinom2, data=callrate_total)
 
-tmbnb.2<-glmmTMB(n_minute ~ behavior + offset(log(group_size)) + (1|encounter),
-               family=nbinom2, data=callrate_total)
 
-tmbnb.3<-glmmTMB(n_minute ~ behavior + offset(log(group_size)) + calf_presence + (1|encounter),
-               family=nbinom2, data=callrate_total)
 
-tmbnb.4<-glmmTMB(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-                   family=nbinom2, data=callrate_total)
 
-#model selection
-AIC(tmbnb.1,tmbnb.2,tmbnb.3,tmbnb.4)   #tmbnb3 is best model
 
-#model summary
-summary(tmbnb.3) 
 
-#model diagnostic plots
-check_model(tmbnb.3)
 
-model_performance(tmbnb.3)
-check_collinearity(tmbnb.3)
-check_overdispersion(tmbnb.3)
-check_zeroinflation(tmbnb.3)  
-plot(parameters(tmbnb.3))
 
-#95% confidence intervals
-confint(tmbnb.3)
 
-#residuals
-residuals(tmbnb.3)
-plot(residuals(tmbnb.3))   # ASK SARAH ABOUT THIS
 
-#predictions
-predict(tmbnb.3)
-plot(predict(tmbnb.3))
+
 
 
