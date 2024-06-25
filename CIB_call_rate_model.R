@@ -384,7 +384,7 @@ test<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|en
                  family=poisson(link="log"), data=callrate_total)
 
 summary(test)
-#coefficient= 1.1 -S.Converse says can offset for group size
+#coefficient= 1.1 -S.Converse says can use offset for group size
 
 
 #Poisson with offset on group size
@@ -510,8 +510,8 @@ plot(pred)
 
 
 ###Sarah recommends this way
-#set up prediction data
-newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(0:50))
+#set up new prediction dataframe
+newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
 
 #number of bootstrap samples and set up to store the results 
 boot.samps <- 500 
@@ -545,10 +545,6 @@ colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
                         "behavior4","calf4","group4","mean4","lwr4","uppr4",
                         "behavior5","calf5","group5","mean5","lwr5","uppr5",
                         "behavior6","calf6","group6","mean6","lwr6","uppr6")
-
-
-
-
 
 
 

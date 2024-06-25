@@ -11,7 +11,6 @@ library(performance)
 library(parameters)
 library(see)
 library(gratia)
-library(DHARMa)
 
 #load data
 setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -228,7 +227,7 @@ callcat_total %>%
 
 
 #################### Model building
-#multinomial that works with a random effect- mgcv with multinomial distribution
+#GAM with multinomial distribution using mgcv package
 
 #default levels are cc,pc,ws
 levels(callcat_total$call_category)
@@ -241,7 +240,7 @@ levels(callcat_total$call_category)
 #categories must be coded 0 to K
 all(callcat_total$call_category2 %in% c(0L, 1L, 2L))
 
-##K=number of levels of response-1. Because there is K=2 we repeat the formula twice within a list
+##K=number of levels of response-1. Because there we have K=2, we repeat the formula twice within a list
 
 #model selection 
 mn0 <- gam(list(call_category2 ~ s(encounter,bs="re"),
@@ -314,7 +313,7 @@ AIC(mn0,mn1,mn2,mn3,mn4,mn5,mn6,mn7,mn8,mn9,mn10,mn11,mn12,mn13,mn14,mn15)
 
 #best models
 AIC(mn2,mn3,mn4,mn15) 
-#mn4 is best which is the full model
+#mn4 (full model) is best 
 
 #model summary
 summary(mn4)
@@ -356,7 +355,7 @@ plot(parameters(mn4))
 -9.783e-01 - 1.96*1.339e+00
 
 
-#### Model-diagnostics- residual plots 
+#### Model-diagnostics
 plot(mn4, pages=1, all.terms = TRUE, rug=FALSE, residuals=TRUE, shade=TRUE, shift=coef(mn4)[1])
 
 #plots of smoothed terms (random effect of encounter)
@@ -368,16 +367,24 @@ gam.check(mn4)
 #examining qq plot further
 qq.gam(mn4,pch=1)
 
-#examining residuals- Dave said all these look good!
+#examining residuals
 E <- residuals(mn4)
-F <- fitted(mn4)
 
+#group size
 callcat_total$cat_group_size <- cut(callcat_total$group_size, seq(0, 60, by=10))
-plot(callcat_total$cat_group_size,E, xlab="Group size",ylab="Residuals")
-plot(callcat_total$tide,E, xlab="Tide", ylab="Residuals")
-plot(callcat_total$calf_presence,E, xlab="Calf presence", ylab="Residuals")
-plot(callcat_total$behavior,E, xlab="Behavior", ylab="Residuals")
-plot(callcat_total$encounter,E, xlab="Encounter", ylab="Residuals")
+plot(callcat_total$cat_group_size, E, xlab="Group size",ylab="Residuals")
+
+#behavior
+plot(callcat_total$behavior, E, xlab="Behavior", ylab="Residuals")
+
+#calf presence
+plot(callcat_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
+
+#tide
+plot(callcat_total$tide, E, xlab="Tide", ylab="Residuals")
+
+#encounter
+plot(callcat_total$encounter, E, xlab="Encounter", ylab="Residuals")
 
 
 
@@ -389,9 +396,85 @@ boxplot(preds, type="response")
 
 
 ###Sarah recommends this way
-#set up prediction data
-newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(0:50),tide=c("ebb","flood"))
+#set up new prediction dataframe
+newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50),tide=c("ebb","flood"))
 
+
+
+#number of bootstrap samples and set up to store the results 
+boot.samps <- 500 
+pv <- matrix(NA,nrow=boot.samps,ncol=nrow(newData))
+#simulate from the model, update the model with new predictor 
+for(j in 1:boot.samps){
+  y <- unlist(simulate(glmm.nb2))
+  b.mod <- update(glmm.nb2,y ~ .)
+  #then predict from the updated model if the bootstrap sample converged 
+  if(is.null(summary(b.mod)$optinfo$conv$lme4$messages)==TRUE){
+    RE.sd <- as.data.frame(VarCorr(b.mod))$sdcor[1]
+    pv[j,] <- (1/(1+exp(-predict(b.mod, re.form = ~0, newData) + rnorm(1,0,sd=RE.sd))))
+  }
+}
+pv.mean <- apply(pv,2,function(x)mean(x,na.rm=TRUE))
+pv.lowr <- apply(pv,2,function(x)quantile(x,p=0.025,na.rm=TRUE))
+pv.uppr <- apply(pv,2,function(x)quantile(x,p=0.975,na.rm=TRUE))
+
+
+
+#Plot predictions 
+all.plot <- data.frame(newData[c(1:3),],pv.mean[c(1:3)],pv.lowr[c(1:3)],pv.uppr[c(1:3)],
+                       newData[c(4:6),],pv.mean[c(4:6)],pv.lowr[c(4:6)],pv.uppr[c(4:6)],
+                       newData[c(7:9),],pv.mean[c(7:9)],pv.lowr[c(7:9)],pv.uppr[c(7:9)],
+                       newData[c(10:12),],pv.mean[c(10:12)],pv.lowr[c(10:12)],pv.uppr[c(10:12)],
+                       newData[c(13:15),],pv.mean[c(13:15)],pv.lowr[c(13:15)],pv.uppr[c(13:15)],
+                       newData[c(16:18),],pv.mean[c(16:18)],pv.lowr[c(16:18)],pv.uppr[c(16:18)])
+colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
+                        "behavior2","calf2","group2","mean2","lwr2","uppr2",
+                        "behavior3","calf3","group3","mean3","lwr3","uppr3",
+                        "behavior4","calf4","group4","mean4","lwr4","uppr4",
+                        "behavior5","calf5","group5","mean5","lwr5","uppr5",
+                        "behavior6","calf6","group6","mean6","lwr6","uppr6")
+
+
+plot1 <- ggplot(data = all.plot) +
+  geom_bar(aes(x=behavior1, y = mean1)) + 
+  geom_ribbon(aes(x=behavior1, ymin = lwr1, ymax = uppr1), fill = "blue", alpha = 0.4) +
+  geom_line(aes(x=behavior4, y = mean4)) + 
+  geom_ribbon(aes(x=behavior4, ymin = lwr4, ymax = uppr4), fill = "red", alpha = 0.4) +
+  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Low,Rear=No")) +
+  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Low,Rear=Yes")) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        text = element_text(size = 16),legend.text = element_text(size=16),
+        legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
+
+plot2 <- ggplot(data = all.plot) +
+  geom_line(aes(x=Kin2, y = mean2)) + 
+  geom_ribbon(aes(x=Kin2, ymin = lwr2, ymax = uppr2), fill = "blue", alpha = 0.4) +
+  geom_line(aes(x=Kin5, y = mean5)) + 
+  geom_ribbon(aes(x=Kin5, ymin = lwr5, ymax = uppr5), fill = "red", alpha = 0.4) +
+  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Mid,Rear=No")) +
+  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Mid,Rear=Yes")) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size = 16),legend.text = element_text(size=16),legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
+
+plot3 <- ggplot(data = all.plot) +
+  geom_line(aes(x=Kin3, y = mean3)) + 
+  geom_ribbon(aes(x=Kin3, ymin = lwr3, ymax = uppr3), fill = "blue", alpha = 0.4) +
+  geom_line(aes(x=Kin6, y = mean6)) + 
+  geom_ribbon(aes(x=Kin6, ymin = lwr6, ymax = uppr6), fill = "red", alpha = 0.4) +
+  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Hi,Rear=No")) +
+  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Hi,Rear=Yes")) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size = 16),legend.text = element_text(size=16),legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
+
+plots <- ggarrange(plot1,plot2,plot3,common.legend=TRUE, legend = "right")
+annotate_figure(plots,
+                left = text_grob("Pr(fertile)", color = "black", size = 18, rot = 90),
+                bottom = text_grob("Scaled Kinship",color = "black",size = 18))
 
 
 
