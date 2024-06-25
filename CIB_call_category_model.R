@@ -399,8 +399,6 @@ boxplot(preds, type="response")
 #set up new prediction dataframe
 newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50),tide=c("ebb","flood"))
 
-
-
 #number of bootstrap samples and set up to store the results 
 boot.samps <- 500 
 pv <- matrix(NA,nrow=boot.samps,ncol=nrow(newData))

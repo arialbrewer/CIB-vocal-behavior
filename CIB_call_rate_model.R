@@ -439,7 +439,7 @@ glmm.nb7<-glmer.nb(n_minute ~ offset(log(group_size)) + tide + (1|encounter),
 
 #model selection
 AIC(glmm.nb0,glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4,glmm.nb5,glmm.nb6,glmm.nb7) #nb2 is the best model (no tide)
-drop1(glmm.nb,test="Chi")
+
 
 #model summary
 summary(glmm.nb2) 
@@ -455,15 +455,15 @@ model_performance(glmm.nb2)
 check_overdispersion(glmm.nb2)
 
 #manually
-# overdisp_fun <- function(model) {
-#   rdf <- df.residual(model)
-#   rp <- residuals(model,type="pearson")
-#   Pearson.chisq <- sum(rp^2)
-#   prat <- Pearson.chisq/rdf
-#   pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
-#   c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
-# }
-# overdisp_fun(glmm.nb2)
+overdisp_fun <- function(model) {
+  rdf <- df.residual(model)
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+overdisp_fun(glmm.nb2)
 
 #check zero inflation
 check_zeroinflation(glmm.nb2)  
@@ -484,15 +484,21 @@ pchisq(deviance(glmm.nb2),df.residual(glmm.nb2),lower=FALSE)
 
 #examining residuals    
 E <- residuals(glmm.nb2)
-F <- fitted(glmm.nb2)
 
+#group size
 callrate_total$rate_group_size <- cut(callrate_total$group_size, seq(0, 60, by=10))
-plot(callrate_total$rate_group_size,E, xlab="Group size",ylab="Residuals")
-plot(callrate_total$calf_presence,E, xlab="Calf presence", ylab="Residuals")
-plot(callrate_total$behavior,E, xlab="Behavior", ylab="Residuals")
-plot(callrate_total$encounter,E, xlab="Encounter", ylab="Residuals")
+plot(callrate_total$rate_group_size, E, xlab="Group size",ylab="Residuals")
 
-#Other options to examine residuals
+#behavior
+plot(callrate_total$behavior, E, xlab="Behavior", ylab="Residuals")
+
+#calf presence
+plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
+
+#encounter
+plot(callrate_total$encounter, E, xlab="Encounter", ylab="Residuals")
+
+###Other options to examine residuals
 #DHARMa randomized quantile residuals
 simulationOutput <- simulateResiduals(fittedModel = glmm.nb2, plot = T)
 
