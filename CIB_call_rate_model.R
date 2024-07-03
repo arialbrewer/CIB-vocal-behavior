@@ -398,6 +398,12 @@ check_zeroinflation(glmm.pois)  #zero-inflation
 #check residuals
 simulateResiduals(fittedModel = glmm.pois, plot = T)
 
+#Chi2 Goodness of fit test (null hypothesis= model is correctly specified)  
+X2 <- sum((callrate_total$n_minute - fitted(glmm.pois))^2 / fitted(glmm.pois))
+df <- length(callrate_total$n_minute)-length(coef(glmm.pois))
+pchisq(X2, df,lower.tail = FALSE)
+#reject null- model not a good fit
+
 
 ##Fit negative binomial since poisson model is over-dispersed and zero-inflated:
 glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
@@ -440,7 +446,6 @@ glmm.nb7<-glmer.nb(n_minute ~ offset(log(group_size)) + tide + (1|encounter),
 #model selection
 AIC(glmm.nb0,glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4,glmm.nb5,glmm.nb6,glmm.nb7) #nb2 is the best model (no tide)
 
-
 #model summary
 summary(glmm.nb2) 
 plot(parameters(glmm.nb2))
@@ -454,7 +459,7 @@ model_performance(glmm.nb2)
 #with performance package
 check_overdispersion(glmm.nb2)
 
-#manually
+#manually (null=there is no over-dispersion)
 overdisp_fun <- function(model) {
   rdf <- df.residual(model)
   rp <- residuals(model,type="pearson")
@@ -463,9 +468,9 @@ overdisp_fun <- function(model) {
   pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
   c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
 }
-overdisp_fun(glmm.nb2)
+overdisp_fun(glmm.nb2) #fail to reject null=no over-dispersion
 
-#check zero inflation
+#check zero-inflation
 check_zeroinflation(glmm.nb2)  
 
 #95% confidence intervals
@@ -473,12 +478,13 @@ confint(glmm.nb2, level=0.95)
 
 
 ################### Model diagnostics
-#Goodness of fit Chi2 test     ####ASK SARAH ABOUT THIS
-X2 <- sum((callrate_total$n_minute - fitted(glmm.nb2))^2 / fitted(glmm.nb2))
-df <- length(callrate_total$n_minute)-length(coef(glmm.nb2))
+#Goodness of fit Chi2 test     ####DOESN'T WORK WITH NB
+X2 <- sum((callrate_total$n_minute - fitted(glmm.pois))^2 / fitted(glmm.pois))
+df <- length(callrate_total$n_minute)-length(coef(glmm.pois))
 pchisq(X2, df,lower.tail = FALSE)
 
-#from another website
+
+#from cross validated website
 pchisq(deviance(glmm.nb2),df.residual(glmm.nb2),lower=FALSE)
 
 
@@ -509,7 +515,7 @@ check_model(glmm.nb2)
 
 ############ Predictions   
 library(ggeffects)
-#predictions by all variables
+#predictions by all variables- condition used since we have an offset on group size
 pred <- predict_response(glmm.nb2,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
 print(pred,collapse_ci=TRUE)
 plot(pred)
@@ -518,6 +524,10 @@ plot(pred)
 ###Sarah recommends this way
 #set up new prediction dataframe
 newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
+
+
+pred <- predict(glmm.nb2,newData,type="response")
+
 
 #number of bootstrap samples and set up to store the results 
 boot.samps <- 500 
