@@ -392,7 +392,14 @@ glmm.pois<-glmer(n_minute ~ behavior + offset(log(group_size)) + calf_presence +
               family=poisson(link="log"), data=callrate_total)
 
 summary(glmm.pois)
+
+#check overdispersion parameter manually (X2/df.resid)
+sum(residuals(glmm.pois,type="pearson")^2)/1046 
+
+#check overdispersion with performance package
 check_overdispersion(glmm.pois) #over-dispersed
+
+#check zero-inflation with performance package
 check_zeroinflation(glmm.pois)  #zero-inflation
 
 #check residuals
@@ -410,6 +417,11 @@ glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence +
                   data=callrate_total)
 
 summary(glmm.nb)
+
+#check overdispersion parameter manually (X2/df.resid)
+sum(residuals(glmm.nb,type="pearson")^2)/1045 
+
+#with performance package
 check_overdispersion(glmm.nb)  #no over-dispersion
 check_zeroinflation(glmm.nb)   #no zero-inflation
 
@@ -455,11 +467,13 @@ plot(parameters(glmm.nb2))
 #Marginal R2: considers only the variance of the fixed effects.
 model_performance(glmm.nb2)
 
-#check over-dispersion
+#check overdispersion parameter manually (X2/df.resid)
+sum(residuals(glmm.nb2,type="pearson")^2)/1046
+
 #with performance package
 check_overdispersion(glmm.nb2)
 
-#manually (null=there is no over-dispersion)
+#another way manually (null=there is no over-dispersion)
 overdisp_fun <- function(model) {
   rdf <- df.residual(model)
   rp <- residuals(model,type="pearson")
@@ -476,18 +490,21 @@ check_zeroinflation(glmm.nb2)
 #95% confidence intervals
 confint(glmm.nb2, level=0.95)
 
+#manually plot with CI
+#all variables except CC-calf presence
+nb2.summ <- read_csv("call_rate_model_summ.csv") 
+
+ggplot(data=nb2.summ, aes(x=coefficient, y=variable, color=sig)) +
+  geom_point() +
+  geom_pointrange(aes(xmin=lower,xmax=upper)) +
+  geom_vline(xintercept=0,lty=2) +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(-1.5,1.5,by=0.5)) +
+  labs(x="Coefficient", y=" Variable", color="Significant")
+
+
 
 ################### Model diagnostics
-#Goodness of fit Chi2 test     ####DOESN'T WORK WITH NB
-X2 <- sum((callrate_total$n_minute - fitted(glmm.pois))^2 / fitted(glmm.pois))
-df <- length(callrate_total$n_minute)-length(coef(glmm.pois))
-pchisq(X2, df,lower.tail = FALSE)
-
-
-#from cross validated website
-pchisq(deviance(glmm.nb2),df.residual(glmm.nb2),lower=FALSE)
-
-
 #examining residuals    
 E <- residuals(glmm.nb2)
 

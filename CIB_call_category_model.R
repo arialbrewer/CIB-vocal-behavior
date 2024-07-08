@@ -354,6 +354,33 @@ plot(parameters(mn4))
 -9.783e-01 + 1.96*1.339e+00
 -9.783e-01 - 1.96*1.339e+00
 
+#manually plot with CI
+#all variables except CC-calf presence
+mn4.summ <- read_csv("call_cat_model_summ.csv") 
+
+#reorder variables so cc is first                   
+# #mn4.summ %>% mutate(variable=factor(variable, levels=c("CC-Behavior-travel", "CC-Group size", "CC-Tide-flood", 
+#                                                   "PC-Behavior-travel", "PC-Calf presence-yes",
+#                                                   "PC-Group size", "PC-Tide-flood")))
+
+ggplot(data=mn4.summ, aes(x=coefficient, y=variable, color=sig)) +
+  geom_point() +
+  geom_pointrange(aes(xmin=lower,xmax=upper)) +
+  geom_vline(xintercept=0,lty=2) +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(-4,4,by=1)) +
+  labs(x="Coefficient", y=" Variable", color="Significant")
+
+#CC-calf presence only
+mn4.summ_calf <- read_csv("call_cat_model_summ_w_calf.csv")
+
+ggplot(data=mn4.summ_calf, aes(x=coefficient, y=variable,color="red")) +
+  geom_point() +
+  geom_pointrange(aes(xmin=lower,xmax=upper)) +
+  geom_vline(xintercept=0,lty=2) +
+  theme_classic() +
+  labs(x="Coefficient", y=" Variable") 
+
 
 #### Model-diagnostics
 plot(mn4, pages=1, all.terms = TRUE, rug=FALSE, residuals=TRUE, shade=TRUE, shift=coef(mn4)[1])
