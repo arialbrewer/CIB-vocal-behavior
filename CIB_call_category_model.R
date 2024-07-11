@@ -1,6 +1,6 @@
 #Arial Brewer
 #PhD- Chapter 2 Vocal Behavior
-#Model 1- call category ~ behavior + group size + calf presence + tide + (1|encounter)
+#Model: call category ~ behavior + group size + calf presence + tide + (1|encounter)
 
 #load packages
 library(tidyverse)

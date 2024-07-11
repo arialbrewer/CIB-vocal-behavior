@@ -1,6 +1,6 @@
 #Arial Brewer
 #PhD- Chapter 2 Vocal Behavior
-#Model 2- calling rate ~ behavior + group size + calf presence + tide + (1|encounter)
+#Model: calling rate ~ behavior + group size + calf presence + tide + (1|encounter)
 
 #load packages
 library(tidyverse)
@@ -189,52 +189,6 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute)) +
 #   theme(plot.title=element_text(hjust=0.5)) +
 #   scale_y_continuous(breaks=seq(0,6,by=1)) +
 #   scale_x_continuous(breaks=seq(0,60,by=5)) 
-
-
-#Separate call rate by call category
-callrate_by_cat <- data_total %>%
-  group_by(date,time,encounter,tide,group_size,calf_presence,behavior, call_category) %>% 
-  summarise(n_minute = n()) %>% 
-  mutate(n_minute = case_when(is.na(call_category)~0, TRUE~n_minute)) %>% 
-  pivot_wider(names_from = call_category, values_from = n_minute) %>% 
-  replace(is.na(.), 0) %>% 
-  mutate(behavior = as.factor(behavior),
-         calf_presence = as.factor(calf_presence),
-         tide = as.factor(tide),
-         encounter = as.factor(encounter),
-         n_minute_group_pc = pc, 
-         n_minute_group_ws = ws,
-         n_minute_group_cc = cc)
-
-#whistles
-ggplot(callrate_by_cat, aes(x=group_size, y=n_minute_group_ws)) +
-  geom_point(alpha=0.2, size=3) +
-  theme_classic() +
-  labs(x="Group size",y="Calling rate (# calls/minute)") +
-  ggtitle("Calling rate- whistles") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_x_continuous(breaks=seq(0,60,by=10)) 
-
-#pulsed calls
-ggplot(callrate_by_cat, aes(x=group_size, y=n_minute_group_pc)) +
-  geom_point(alpha=0.2, size=3) +
-  theme_classic() +
-  labs(x="Group size",y="Calling rate (# calls/minute)") +
-  ggtitle("Calling rate- pulsed calls") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_x_continuous(breaks=seq(0,60,by=10)) 
-
-#combined calls
-ggplot(callrate_by_cat, aes(x=group_size, y=n_minute_group_cc)) +
-  geom_point(alpha=0.2, size=3) +
-  theme_classic() +
-  labs(x="Group size",y="Calling rate (# calls/minute)") +
-  ggtitle("Calling rate- combined calls") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(breaks=seq(0,20,by=5)) +
-  scale_x_continuous(breaks=seq(0,60,by=10)) 
 
 
 ##Plot for Manolo- divide by sub-encounters when group size changes
@@ -491,7 +445,6 @@ check_zeroinflation(glmm.nb2)
 confint(glmm.nb2, level=0.95)
 
 #manually plot with CI
-#all variables except CC-calf presence
 nb2.summ <- read_csv("call_rate_model_summ.csv") 
 
 ggplot(data=nb2.summ, aes(x=coefficient, y=variable, color=sig)) +
@@ -578,61 +531,6 @@ colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
                         "behavior4","calf4","group4","mean4","lwr4","uppr4",
                         "behavior5","calf5","group5","mean5","lwr5","uppr5",
                         "behavior6","calf6","group6","mean6","lwr6","uppr6")
-
-
-
-plot1 <- ggplot(data = all.plot) +
-  geom_bar(aes(x=behavior1, y = mean1)) + 
-  geom_ribbon(aes(x=behavior1, ymin = lwr1, ymax = uppr1), fill = "blue", alpha = 0.4) +
-  geom_line(aes(x=behavior4, y = mean4)) + 
-  geom_ribbon(aes(x=behavior4, ymin = lwr4, ymax = uppr4), fill = "red", alpha = 0.4) +
-  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Low,Rear=No")) +
-  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Low,Rear=Yes")) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-        axis.title.x = element_blank(), axis.title.y = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),
-        text = element_text(size = 16),legend.text = element_text(size=16),
-        legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
-
-plot2 <- ggplot(data = all.plot) +
-  geom_line(aes(x=Kin2, y = mean2)) + 
-  geom_ribbon(aes(x=Kin2, ymin = lwr2, ymax = uppr2), fill = "blue", alpha = 0.4) +
-  geom_line(aes(x=Kin5, y = mean5)) + 
-  geom_ribbon(aes(x=Kin5, ymin = lwr5, ymax = uppr5), fill = "red", alpha = 0.4) +
-  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Mid,Rear=No")) +
-  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Mid,Rear=Yes")) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size = 16),legend.text = element_text(size=16),legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
-
-plot3 <- ggplot(data = all.plot) +
-  geom_line(aes(x=Kin3, y = mean3)) + 
-  geom_ribbon(aes(x=Kin3, ymin = lwr3, ymax = uppr3), fill = "blue", alpha = 0.4) +
-  geom_line(aes(x=Kin6, y = mean6)) + 
-  geom_ribbon(aes(x=Kin6, ymin = lwr6, ymax = uppr6), fill = "red", alpha = 0.4) +
-  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Hi,Rear=No")) +
-  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Hi,Rear=Yes")) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size = 16),legend.text = element_text(size=16),legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
-
-plots <- ggarrange(plot1,plot2,plot3,common.legend=TRUE, legend = "right")
-annotate_figure(plots,
-                left = text_grob("Pr(fertile)", color = "black", size = 18, rot = 90),
-                bottom = text_grob("Scaled Kinship",color = "black",size = 18))
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
