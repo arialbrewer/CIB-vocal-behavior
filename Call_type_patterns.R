@@ -1,4 +1,6 @@
-#EXPLORE CALL TYPE FREQUENCY DURING ENCOUNTER
+#Arial Brewer
+#PhD- Chapter 2 Vocal Behavior
+#Explore call type patterns in 2021 data
 
 #load packages
 library(tidyverse)
@@ -6,8 +8,8 @@ library(tidyverse)
 #read in data
 setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
 
-acoustic_files <- list.files(pattern = "acoustic.csv")
-behavior_files <- list.files(pattern = "behavior.csv")
+acoustic_files <- intersect(list.files(pattern = "ER21"),list.files(pattern="acoustic.csv"))
+behavior_files <- intersect(list.files(pattern = "ER21"),list.files(pattern="behavior.csv"))
 
 acoustic_data <- acoustic_files %>%  
   map(read_csv) %>% 
@@ -19,52 +21,78 @@ behavior_data <- behavior_files %>%
   reduce(rbind) %>% 
   dplyr::select(-sample_round,-group_number,-dot,-count_white,-count_gray,-count_calf,-comments)
 
-#combine behavioral & acoustic data and remove NAs (zeros don't matter)
-calltype_total <- behavior_data %>% 
-  left_join(acoustic_data, by = c("date","time"), multiple = "all") %>% 
+#join acoustic and behavior datasets
+data_total <- behavior_data %>% 
+  left_join(acoustic_data, by = c("date","time"), multiple = "all") 
+
+calltype_count <- data_total %>% 
+  group_by(call_type,call_category) %>% 
+  summarise(number=n()) %>% 
   na.omit()
 
-#write_csv(calltype_total,"C:/Users/Arial/OneDrive - UW/Desktop/CH.2 Vocal behavior/CIB vocal behavior code/calltype_total.csv")
+#bin into calls per minute
+callrate <- data_total %>%
+  mutate(num.calls = case_when(is.na(call_category)~0,TRUE~1)) %>% 
+  group_by(date,time,encounter,tide,group_size,calf_presence,behavior) %>% 
+  summarise(n_minute = sum(num.calls)) %>% 
+  mutate(behavior = as.factor(behavior),
+         calf_presence = as.factor(calf_presence),
+         tide = as.factor(tide),
+         encounter = as.factor(encounter),
+         date = mdy(date),
+         time = hms(time)) %>% 
+  group_by(encounter) %>% 
+  mutate(minute=row_number())
 
-table(calltype_total$call_type)
+
+#calls per minute by call category
+callrate_calltype <- data_total %>%
+  group_by(date,time,encounter,tide,group_size,calf_presence,behavior,call_type) %>% 
+  summarise(n_minute = n()) %>% 
+  mutate(n_minute = case_when(is.na(call_type)~0, TRUE~n_minute)) %>% 
+  pivot_wider(names_from = call_type, values_from = n_minute) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(behavior = as.factor(behavior),
+         calf_presence = as.factor(calf_presence),
+         tide = as.factor(tide),
+         encounter = as.factor(encounter),
+         date = mdy(date),
+         time = hms(time)) %>% 
+  group_by(encounter) %>% 
+  mutate(minute=row_number())
 
 
-####read in individual encounters
-enc1_2021 <- read_csv("2021enc_1.csv")
-enc3_2021 <- read_csv("2021enc_3.csv")
-enc4_2021 <- read_csv("2021enc_4.csv")
-enc5_2021 <- read_csv("2021enc_5.csv")
-enc6_2021 <- read_csv("2021enc_6.csv")
-enc7_2021 <- read_csv("2021enc_7.csv")
-enc8_2021 <- read_csv("2021enc_8.csv")
 
-###plots
-#behavior
-ggplot(enc3_2021, aes(x=time, y= ))+
-  geom_line(stat="count", aes(color=call_type), size=1)+
-  geom_ribbon(aes(ymin=15.9,ymax=16,fill=behavior))+
+#call type counts
+pal <- c("gold2","darkseagreen","cyan4")
+ggplot(data=calltype_count, aes(x=number, y=reorder(call_type,number),fill=call_category)) +
+  geom_col()+
   theme_classic()+
-  labs(x="Time",y="Count")+
-  scale_y_continuous(breaks=seq(1,30,by=1))
-
-#calf presence
-ggplot(enc5_2021, aes(x=time, y= ))+
-  geom_line(stat="count", aes(color=call_type), size=1)+
-  geom_ribbon(aes(ymin=15.9,ymax=16,fill=calf_presence))+
-  theme_classic()+
-  labs(x="Time",y="Count")+
-  scale_y_continuous(breaks=seq(1,30,by=1))
-
-#tide
-ggplot(enc8_2021, aes(x=time, y= ))+
-  geom_line(stat="count", aes(color=call_type), size=1)+
-  geom_ribbon(aes(ymin=15.9,ymax=16,fill=tide))+
-  theme_classic()+
-  labs(x="Time",y="Count")+
-  scale_y_continuous(breaks=seq(1,30,by=1))
+  labs(x="Number", y="Call type")+
+  scale_fill_manual(values=pal) +
+  scale_x_continuous(expand=c(0,0))
 
 
-
-  facet_wrap(~call_type, ncol = 4))
-
+###Individual encounter plots
+##2021 data
+#encounter 3
+ggplot(data=callrate_calltype %>% filter(encounter==3)) +
+  geom_line(aes(x=minute,y=?????????     #####how to put line for 40 call types?????
+    
+  
+  geom_line(aes(x=minute,y=ws),color="cyan4",size=1) +
+  geom_line(aes(x=minute,y=pc),color="darkseagreen",size=1) +
+  geom_line(aes(x=minute,y=cc),color="gold2",size=1) +
+  theme_classic() +
+  labs(x="Minutes since start of encounter",y="Count")+
+  ggtitle("2021- encounter 16") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,10,by=1)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,80,by=5)) 
+  
+  
+  
+#encounter 4
+  
+#encounter 5
 
