@@ -149,7 +149,6 @@ ggplot(data=callrate_total, aes(x=n_minute)) +
 #   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
 #   labs(x="Total call rate (#calls/minute)",y="Count") 
 
-
 # Per capital call rate
 # ggplot(data=callrate_total, aes(x=n_minute_group)) +
 #   geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
@@ -327,8 +326,7 @@ test<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|en
                  family=poisson(link="log"), data=callrate_total)
 
 summary(test)
-#coefficient= 1.1 -S.Converse says can use offset for group size
-
+#coefficient= 1.1 -can use offset for group size
 
 #Poisson with offset on group size
 glmm.pois<-glmer(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
@@ -336,7 +334,7 @@ glmm.pois<-glmer(n_minute ~ behavior + offset(log(group_size)) + calf_presence +
 
 summary(glmm.pois)
 
-#check overdispersion parameter manually (X2/df.resid)
+#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
 sum(residuals(glmm.pois,type="pearson")^2)/1046 
 
 #check overdispersion with performance package
@@ -364,8 +362,10 @@ summary(glmm.nb)
 #check overdispersion parameter manually (X2/df.resid)
 sum(residuals(glmm.nb,type="pearson")^2)/1045 
 
-#with performance package
+#check overdispersion with performance package
 check_overdispersion(glmm.nb)  #no over-dispersion
+
+#check zero-inflation
 check_zeroinflation(glmm.nb)   #no zero-inflation
 
 #check residuals- better with nb
@@ -399,7 +399,8 @@ glmm.nb7<-glmer.nb(n_minute ~ offset(log(group_size)) + tide + (1|encounter),
 
 
 #model selection
-AIC(glmm.nb0,glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4,glmm.nb5,glmm.nb6,glmm.nb7) #nb2 is the best model (no tide)
+AIC(glmm.nb0,glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4,glmm.nb5,glmm.nb6,glmm.nb7) 
+#nb2 is the best model (model without tide)
 
 #model summary
 summary(glmm.nb2) 
@@ -433,17 +434,21 @@ check_zeroinflation(glmm.nb2)
 #95% confidence intervals
 confint(glmm.nb2, level=0.95)
 
-#manually plot with CI
-nb2.summ <- read_csv("call_rate_model_summ.csv") 
+###manually plot with CI
+#new dataframe with model coefficients and CI
+model_summ <- data.frame(variable=c("Behavior [trave]","Calf presence [yes]"),
+                         coefficient=c(1.248,0.575),
+                         lower=c(0.678,-0.134),
+                         upper=c(1.84,1.291),
+                         sig=c("yes","no"))
 
-ggplot(data=nb2.summ, aes(x=coefficient, y=variable, color=sig)) +
+ggplot(data=model_summ, aes(x=coefficient, y=variable, color=sig)) +
   geom_point() +
   geom_pointrange(aes(xmin=lower,xmax=upper)) +
   geom_vline(xintercept=0,lty=2) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-1.5,1.5,by=0.5)) +
   labs(x="Coefficient", y=" Variable", color="Significant")
-
 
 
 ################### Model diagnostics
