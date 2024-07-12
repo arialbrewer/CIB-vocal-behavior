@@ -318,10 +318,7 @@ AIC(mn2,mn3,mn4,mn15)
 #model summary
 summary(mn4)
 
-#model summary plots
-plot(parameters(mn4))
-
-##confidence intervals 95% = (Coef +/- 1.96 * SE).
+##calculate 95% CI= (Coef +/- 1.96 * SE).
 #cc for behavior-travel
 -2.469e+00 + 1.96*5.634e-01
 -2.469e+00 - 1.96*5.634e-01
@@ -354,16 +351,24 @@ plot(parameters(mn4))
 -9.783e-01 + 1.96*1.339e+00
 -9.783e-01 - 1.96*1.339e+00
 
-#manually plot with CI
-#all variables except CC-calf presence
-mn4.summ <- read_csv("call_cat_model_summ.csv") 
+
+###plot model coefficients, CI and significance 
+#without CC-calf presence (masks other variable CI)
+#new dataframe with model coefficients and CI
+model_summ <- data.frame(variable=c("CC-Behavior [trave]","CC-Group size","CC-Tide [flood]", 
+                                    "PC-Behavior [travel]","PC-Calf presence [yes]","PC-Group size","PC-Tide [flood]"),
+                         coefficient=c(-2.469,0.051,0.247,-0.927,-2.674,0.003,-0.978),
+                         lower=c(-3.573,-0.027,-2.771,-1.312,-3.568,-0.007,-3.603),
+                         upper=c(-1.365,0.129,3.266,-0.541,-1.78,0.013,1.646),
+                         sig=c("yes","no","no","yes","yes","no","no"))
+
 
 #reorder variables so cc is first                   
 # #mn4.summ %>% mutate(variable=factor(variable, levels=c("CC-Behavior-travel", "CC-Group size", "CC-Tide-flood", 
 #                                                   "PC-Behavior-travel", "PC-Calf presence-yes",
 #                                                   "PC-Group size", "PC-Tide-flood")))
 
-ggplot(data=mn4.summ, aes(x=coefficient, y=variable, color=sig)) +
+ggplot(data=model_summ, aes(x=coefficient, y=variable, color=sig)) +
   geom_point() +
   geom_pointrange(aes(xmin=lower,xmax=upper)) +
   geom_vline(xintercept=0,lty=2) +
@@ -371,25 +376,23 @@ ggplot(data=mn4.summ, aes(x=coefficient, y=variable, color=sig)) +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant")
 
-#CC-calf presence only
-mn4.summ_calf <- read_csv("call_cat_model_summ_w_calf.csv")
+#new dataframe with CC-calf presence only
+model_summ_cc.calf <- data.frame(variable="CC-Calf presence [yes]",
+                         coefficient=21.74,
+                         lower=-201466.3,
+                         upper=201509.7,
+                         sig="no")
 
-ggplot(data=mn4.summ_calf, aes(x=coefficient, y=variable,color="red")) +
+ggplot(data=model_summ_cc.calf, aes(x=coefficient, y=variable,color=sig)) +
   geom_point() +
   geom_pointrange(aes(xmin=lower,xmax=upper)) +
   geom_vline(xintercept=0,lty=2) +
   theme_classic() +
-  labs(x="Coefficient", y=" Variable") 
+  labs(x="Coefficient", y=" Variable", color="Significant") 
 
 
 #### Model-diagnostics
 plot(mn4, pages=1, all.terms = TRUE, rug=FALSE, residuals=TRUE, shade=TRUE, shift=coef(mn4)[1])
-
-#plots of smoothed terms (random effect of encounter)
-draw(mn4, residuals=TRUE)
-
-#check k values
-gam.check(mn4)
 
 #examining qq plot further
 qq.gam(mn4,pch=1)
@@ -419,7 +422,6 @@ plot(callcat_total$encounter, E, xlab="Encounter", ylab="Residuals")
 preds <- predict(mn4, type="response")
 head(preds)
 boxplot(preds, type="response")
-
 
 
 ###Sarah recommends this way
@@ -462,88 +464,6 @@ colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###############################
-#switch pc and cc to test model
-callcat_total <-  callcat_total %>% 
-  mutate(call_category = fct_relevel(call_category,c("ws","pc","cc")))
-
-
-######################################
-#remove cc to test binomial with ws and pc
-#test <- callcat_total %>% 
-      filter(call_category==c('ws','pc'))
-  
-#not showing the correct amount of data rows
-
-
-#manually removed cc
-test <- read_csv("callcat_total_ws_pc.csv") %>% 
-  mutate(behavior=as.factor(behavior),
-         calf_presence=as.factor(calf_presence),
-         tide=as.factor(tide),
-         encounter=as.factor(encounter),
-         group_size=as.integer(group_size),
-         call_category=as.factor(call_category))
-
-levels(test$call_category)
-
-#relevel so ws is reference
-test$call_category <- relevel(test$call_category,ref = "ws")
-levels(test$call_category)
-test$call_category2 <- as.numeric(test$call_category)-1
-all(test$call_category2 %in% c(0L, 1L))
-
-#remove one category to make binomial
-binom_model <- gam(call_category ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re"),
-               data = test,
-               family = binomial(link="logit"),
-               method = "REML",
-               optimizer = "efs")
-
-summary(binom_model)
-
-
-#manually removed pc
-test2 <- read_csv("callcat_total_ws_cc.csv") %>% 
-  mutate(behavior=as.factor(behavior),
-         calf_presence=as.factor(calf_presence),
-         tide=as.factor(tide),
-         encounter=as.factor(encounter),
-         group_size=as.integer(group_size),
-         call_category=as.factor(call_category))
-
-levels(test2$call_category)
-
-#relevel so ws is reference
-test2$call_category <- relevel(test2$call_category,ref = "ws")
-levels(test2$call_category)
-test2$call_category2 <- as.numeric(test2$call_category)-1
-all(test2$call_category2 %in% c(0L, 1L))
-
-#remove one category to make binomial
-binom_model2 <- gam(call_category ~ behavior + s(group_size) + calf_presence + tide + s(encounter,bs="re"),
-               data = test2,
-               family = binomial(link="logit"),
-               method = "REML",
-               optimizer = "efs")
-
-summary(binom_model2)
 
 
 
