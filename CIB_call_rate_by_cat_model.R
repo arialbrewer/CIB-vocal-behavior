@@ -210,18 +210,6 @@ plot(callrate_by_cat$calf_presence, E.ws, xlab="Calf presence", ylab="Residuals"
 plot(callrate_by_cat$encounter, E.ws, xlab="Encounter", ylab="Residuals")
 
 
-## Predictions   
-library(ggeffects)
-#predictions by all variables- condition used since we have an offset on group size
-pred <- predict_response(glmm.nb2,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
-print(pred,collapse_ci=TRUE)
-plot(pred)
-
-###Sarah recommends this way
-#set up new prediction dataframe
-newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
-
-
 
 ################### Model building: pulsed calls
 ##test model to see coefficient of group size
@@ -364,18 +352,6 @@ plot(callrate_by_cat$calf_presence, E.pc, xlab="Calf presence", ylab="Residuals"
 
 #encounter
 plot(callrate_by_cat$encounter, E.pc, xlab="Encounter", ylab="Residuals")
-
-
-## Predictions   
-library(ggeffects)
-#predictions by all variables- condition used since we have an offset on group size
-pred <- predict_response(glmm.nb2,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
-print(pred,collapse_ci=TRUE)
-plot(pred)
-
-###Sarah recommends this way
-#set up new prediction dataframe
-newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
 
 
 
@@ -529,16 +505,6 @@ plot(callrate_by_cat$calf_presence, E.cc, xlab="Calf presence", ylab="Residuals"
 plot(callrate_by_cat$encounter, E.cc, xlab="Encounter", ylab="Residuals")
 
 
-############ Predictions   
-library(ggeffects)
-#predictions by all variables- condition used since we have an offset on group size
-pred <- predict_response(glmm.nb2,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
-print(pred,collapse_ci=TRUE)
-plot(pred)
-
-###Sarah recommends this way
-#set up new prediction dataframe
-newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
 
 
 

@@ -191,17 +191,6 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute)) +
 #   scale_x_continuous(breaks=seq(0,60,by=5)) 
 
 
-##Plot for Manolo- divide by sub-encounters when group size changes
-#callrate_total_subencounters <- read_csv("callrate_total_subencounters.csv")
-
-# ggplot(callrate_total_subencounters, aes(x=group_size, y=n_minute, color=encounter)) +
-#   geom_point(alpha=0.2, size=3) +
-#   theme_classic() +
-#   labs(x="Group size",y="Relative calling rate (# calls/minute/whale)") +
-#   scale_y_continuous(breaks=seq(0,6,by=1)) +
-#   scale_x_continuous(breaks=seq(0,60,by=5))
-
-
 ##### Group size vs calling rate by variable
 #behavior
 ggplot(callrate_total, aes(x=group_size, y=n_minute, color=behavior)) +

@@ -460,50 +460,6 @@ colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
                         "behavior6","calf6","group6","mean6","lwr6","uppr6")
 
 
-plot1 <- ggplot(data = all.plot) +
-  geom_bar(aes(x=behavior1, y = mean1)) + 
-  geom_ribbon(aes(x=behavior1, ymin = lwr1, ymax = uppr1), fill = "blue", alpha = 0.4) +
-  geom_line(aes(x=behavior4, y = mean4)) + 
-  geom_ribbon(aes(x=behavior4, ymin = lwr4, ymax = uppr4), fill = "red", alpha = 0.4) +
-  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Low,Rear=No")) +
-  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Low,Rear=Yes")) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-        axis.title.x = element_blank(), axis.title.y = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),
-        text = element_text(size = 16),legend.text = element_text(size=16),
-        legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
-
-plot2 <- ggplot(data = all.plot) +
-  geom_line(aes(x=Kin2, y = mean2)) + 
-  geom_ribbon(aes(x=Kin2, ymin = lwr2, ymax = uppr2), fill = "blue", alpha = 0.4) +
-  geom_line(aes(x=Kin5, y = mean5)) + 
-  geom_ribbon(aes(x=Kin5, ymin = lwr5, ymax = uppr5), fill = "red", alpha = 0.4) +
-  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Mid,Rear=No")) +
-  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Mid,Rear=Yes")) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size = 16),legend.text = element_text(size=16),legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
-
-plot3 <- ggplot(data = all.plot) +
-  geom_line(aes(x=Kin3, y = mean3)) + 
-  geom_ribbon(aes(x=Kin3, ymin = lwr3, ymax = uppr3), fill = "blue", alpha = 0.4) +
-  geom_line(aes(x=Kin6, y = mean6)) + 
-  geom_ribbon(aes(x=Kin6, ymin = lwr6, ymax = uppr6), fill = "red", alpha = 0.4) +
-  geom_text(x=-0.5, y=0.05, size = 4, label=c("Years=Hi,Rear=No")) +
-  geom_text(x=-0.5, y=0.9, size = 4, label=c("Years=Hi,Rear=Yes")) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size = 16),legend.text = element_text(size=16),legend.key.width = unit(2,"cm"),legend.key = element_blank()) 
-
-plots <- ggarrange(plot1,plot2,plot3,common.legend=TRUE, legend = "right")
-annotate_figure(plots,
-                left = text_grob("Pr(fertile)", color = "black", size = 18, rot = 90),
-                bottom = text_grob("Scaled Kinship",color = "black",size = 18))
-
-
-
-
 
 
 
