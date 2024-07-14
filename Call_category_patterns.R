@@ -163,7 +163,7 @@ ggplot(data=callrate_cattype %>% filter(encounter==20)) +
 
 ####Behavioral transitions
 #filter by the 6 encounters where transitions occur and set transitions to time zero
-behav_tran <- callrate_cattype %>% 
+behav_tran_cat <- callrate_cattype %>% 
   filter(encounter %in% c(3,4,7,13,15,16)) %>% 
   dplyr::select(date,minute,encounter,behavior,ws,pc,cc) %>% 
   ungroup() %>% 
@@ -174,10 +174,10 @@ behav_tran <- callrate_cattype %>%
 # mutate(difftime_next=(minute-behav_next))
 
 #couldn't get code to work for last two lines so saving and doing manually
-#write_csv(behav_tran,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/behav_tran.csv")
+#write_csv(behav_tran_cat,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/behav_tran_cat.csv")
 
 #manually added behav_next and difftime_next
-behav_new <- read_csv("behav_tran.csv")
+behav_new <- read_csv("behav_tran_cat.csv")
 
 
 #create new dataframe for milling to traveling change
@@ -222,7 +222,7 @@ ggplot(travel.mill) +
 
 ####Calf transitions
 #filter by the 5 encounters where transitions occur
-calf_tran <- callrate_cattype %>% 
+calf_tran_cat <- callrate_cattype %>% 
   filter(encounter %in% c(3,5,7,13,20)) %>% 
   dplyr::select(date,minute,encounter,calf_presence,ws,pc,cc) %>% 
   ungroup() %>% 
@@ -233,10 +233,10 @@ calf_tran <- callrate_cattype %>%
 # mutate(difftime_next=(minute-behav_next))
 
 #couldn't get code to work for last two lines so saving and doing manually
-#write_csv(calf_tran,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/calf_tran.csv")
+#write_csv(calf_tran_cat,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/calf_tran_cat.csv")
 
 #manually added calf_next and difftime_next
-calf_new <- read_csv("calf_tran.csv")
+calf_new <- read_csv("calf_tran_cat.csv")
 
 
 #create new dataframe for milling to traveling change
