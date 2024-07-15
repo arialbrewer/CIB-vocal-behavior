@@ -155,21 +155,17 @@ ggplot(data=callrate_cattype %>% filter(encounter==20)) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=2)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,80,by=5)) 
 
-#potential code for ribbon and area
-#geom_ribbon(aes(ymin=18.3,ymax=18.4,fill=calf_presence),show.legend=F)+
-#geom_area(aes(y=17.8,fill=behavior),alpha=0.3,show.legend=F)+
-
 
 
 ####### Behavioral transitions
 #filter by the 6 encounters where transitions occur and set transitions to time zero
-behav_tran_cat <- callrate_cattype %>% 
-  filter(encounter %in% c(3,4,7,13,15,16)) %>% 
-  dplyr::select(date,minute,encounter,behavior,ws,pc,cc) %>% 
-  ungroup() %>% 
-  group_by(encounter,behavior) %>% 
-  mutate(behav_s=min(minute)) %>% 
-  mutate(difftime_s=(minute-behav_s))
+# behav_tran_cat <- callrate_cattype %>% 
+#   filter(encounter %in% c(3,4,7,13,15,16)) %>% 
+#   dplyr::select(date,minute,encounter,behavior,ws,pc,cc) %>% 
+#   ungroup() %>% 
+#   group_by(encounter,behavior) %>% 
+#   mutate(behav_s=min(minute)) %>% 
+#   mutate(difftime_s=(minute-behav_s))
 # mutate(behav_next=min(??????) %>%  #behav_s of next group
 # mutate(difftime_next=(minute-behav_next))
 
@@ -177,69 +173,71 @@ behav_tran_cat <- callrate_cattype %>%
 #write_csv(behav_tran_cat,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/behav_tran_cat.csv")
 
 #manually added behav_next and difftime_next
-behav_new <- read_csv("behav_tran_cat.csv")
+behav <- read_csv("behav_tran_cat.csv")
 
 ## create new dataframe for milling to traveling change
-mill.travel <- behav_new %>% 
-  dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
-  mutate(t_index=case_when(behavior=='Mill'~difftime_next,
-                           behavior=='Travel'~difftime_s)) %>% 
-  dplyr::select(minute,behavior,t_index,ws,pc,cc) 
+# mill.travel <- behav %>% 
+#   dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
+#   mutate(t_index=case_when(behavior=='Mill'~difftime_next,
+#                            behavior=='Travel'~difftime_s)) %>% 
+#   dplyr::select(minute,behavior,t_index,ws,pc,cc) 
 
+#code not working with multiple transitions within one encounter, will manually edit
 #write_csv(mill.travel,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_cat.csv")
   
-#code not working with multiple transitions within one encounter, manually edited:
-mill.travel_new <- read_csv("mill.travel_cat.csv")
-
+#read in updated data and change call categories from wider to longer format
+mill.travel <- read_csv("mill.travel_cat.csv") %>% 
+  pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls")
+  
 #plot milling to traveling change
-ggplot(mill.travel_new) +
-  geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=cc),color="gold2",size=1) +
-  geom_vline(xintercept=0, size=1,lty=2) +
+pal <- c("gold2","darkseagreen","cyan4")
+ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_cat)) + 
+  geom_bar(stat="identity") +
   theme_classic() +
-  labs(x="Time",y="Count") +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_fill_manual(values=pal) +
   ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
+  theme(plot.title=element_text(hjust=0.5)) 
 
 
 #create new dataframe for traveling to milling change 
-travel.mill <- behav_new %>% 
-  dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
-  mutate(t_index=case_when(behavior=='Travel'~difftime_next,
-                           behavior=='Mill'~difftime_s)) %>% 
-  dplyr::select(minute,behavior,t_index,ws,pc,cc)
+# travel.mill <- behav_new %>% 
+#   dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
+#   mutate(t_index=case_when(behavior=='Travel'~difftime_next,
+#                            behavior=='Mill'~difftime_s)) %>% 
+#   dplyr::select(minute,behavior,t_index,ws,pc,cc)
 
+#code not working with multiple transitions within one encounter, will manually edit
 #write_csv(travel.mill,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_cat.csv")
 
-#code not working with multiple transitions within one encounter, manually edited:
+#read in updated data and change call categories from wider to longer format
+travel.mill <- read_csv("travel.mill_cat.csv") %>% 
+  pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls")
 
-travel.mill_new <- read_csv("travel.mill_cat.csv")
-
-#plot traveling to milling change
-ggplot(travel.mill_new) +
-  #geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
-  #geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=cc),color="gold2",size=1) +
-  geom_vline(xintercept=0, size=1,lty=2) +
+#plot milling to traveling change
+ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_cat)) + 
+  geom_bar(stat="identity") +
   theme_classic() +
-  labs(x="Time",y="Count") +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_fill_manual(values=pal) +
   ggtitle("Traveling to milling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
+  theme(plot.title=element_text(hjust=0.5)) 
 
 
 
-####Calf transitions
+####### Calf transitions
 #filter by the 5 encounters where transitions occur
-calf_tran_cat <- callrate_cattype %>% 
-  filter(encounter %in% c(3,5,7,13,20)) %>% 
-  dplyr::select(date,minute,encounter,calf_presence,ws,pc,cc) %>% 
-  ungroup() %>% 
-  group_by(encounter,calf_presence) %>% 
-  mutate(calf_s=min(minute)) %>% 
-  mutate(difftime_s=(minute-calf_s))
+# calf_tran_cat <- callrate_cattype %>% 
+#   filter(encounter %in% c(3,5,7,13,20)) %>% 
+#   dplyr::select(date,minute,encounter,calf_presence,ws,pc,cc) %>% 
+#   ungroup() %>% 
+#   group_by(encounter,calf_presence) %>% 
+#   mutate(calf_s=min(minute)) %>% 
+#   mutate(difftime_s=(minute-calf_s))
 # mutate(behav_next=min(??????) %>%  #behav_s of next group
 # mutate(difftime_next=(minute-behav_next))
 
@@ -249,7 +247,6 @@ calf_tran_cat <- callrate_cattype %>%
 #manually added calf_next and difftime_next
 calf_new <- read_csv("calf_tran_cat.csv")
 
-
 #create new dataframe for calf to no calf change
 calf.nocalf <- calf_new %>% 
   dplyr::select(minute,calf_presence,difftime_s,difftime_next,ws,pc,cc) %>% 
@@ -257,43 +254,48 @@ calf.nocalf <- calf_new %>%
                            calf_presence=='no'~difftime_s)) %>% 
   dplyr::select(minute,calf_presence,t_index,ws,pc,cc) 
 
+calf.nocalf <- calf.nocalf %>% 
+  pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls")
 
 #plot calf to no calf change
-ggplot(calf.nocalf) +
-  geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=cc),color="gold2",size=1) +
-  geom_vline(xintercept=0, size=1,lty=2) +
+ggplot(data=calf.nocalf, aes(x=t_index,y=num_calls,fill=call_cat)) + 
+  geom_bar(stat="identity") +
   theme_classic() +
-  labs(x="Time",y="Count") +
-  ggtitle("Calf to no calf") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(breaks=seq(-80,40,by=20)) +
+  scale_fill_manual(values=pal) +
+  ggtitle("Calves to no calves") +
+  theme(plot.title=element_text(hjust=0.5)) 
 
 
 #create new dataframe for no calf to calf change
-nocalf.calf <- calf_new %>% 
-  dplyr::select(minute,calf_presence,difftime_s,difftime_next,ws,pc,cc) %>% 
-  mutate(t_index=case_when(calf_presence=='no'~difftime_next,
-                           calf_presence=='yes'~difftime_s)) %>% 
-  dplyr::select(minute,calf_presence,t_index,ws,pc,cc)
+# nocalf.calf <- calf_new %>% 
+#   dplyr::select(minute,calf_presence,difftime_s,difftime_next,ws,pc,cc) %>% 
+#   mutate(t_index=case_when(calf_presence=='no'~difftime_next,
+#                            calf_presence=='yes'~difftime_s)) %>% 
+#   dplyr::select(minute,calf_presence,t_index,ws,pc,cc)
 
+#code not working with multiple transitions within one encounter, will manually edit
 #write_csv(nocalf.calf,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/nocalf.calf_cat.csv")
 
-#code not working with multiple transitions within one encounter, manually edited:
-nocalf.calf_new <- read_csv("nocalf.calf_cat.csv")
+#read in updated data and change call categories from wider to longer format
+nocalf.calf <- read_csv("nocalf.calf_cat.csv") %>% 
+  pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls")
 
-#plot no calf to calf change
-ggplot(nocalf.calf_new) +
-  geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=cc),color="gold2",size=1) +
-  geom_vline(xintercept=0, size=1,lty=2) +
+#plot no calf to calf
+ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_cat)) + 
+  geom_bar(stat="identity") +
   theme_classic() +
-  labs(x="Time",y="Count") +
-  ggtitle("No calf to calf") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(breaks=seq(-40,60,by=20)) +
+  scale_fill_manual(values=pal) +
+  ggtitle("No calves to calves") +
+  theme(plot.title=element_text(hjust=0.5)) 
+
 
 
 
