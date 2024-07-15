@@ -71,10 +71,7 @@ ggplot(data=calltype_count, aes(x=number, y=reorder(call_type,number),fill=call_
   scale_x_continuous(expand=c(0,0))
 
 
-
-
 ###### Behavioral transitions
-  
 #call type distribution- behav transition-only encounters
 calltype_count_behav <- data_total %>% 
     filter(encounter %in% c(3,4,7)) %>% 
@@ -109,7 +106,6 @@ behav_tran_type <- callrate_calltype %>%
 #manually added behav_next and difftime_next
 behav_new <- read_csv("behav_tran_type.csv")
 
-
 #create new dataframe for milling to traveling change
 mill.travel <- behav_new %>% 
   dplyr::select(minute,behavior,difftime_s,difftime_next,pulse.flat, flatws,aws,dws,pulse.flat.seg, pulse.d,modws,pulse.a,
@@ -120,6 +116,58 @@ mill.travel <- behav_new %>%
   dplyr::select(minute,behavior,t_index,pulse.flat, flatws,aws,dws,pulse.flat.seg, pulse.d,modws,pulse.a,
                 uws,modws.seg,flatws.seg,pulse.mod,pulse.n,nws,c.13,nws.seq,modws.m,c.9,aws.seg,trill,rws,pulse.mod.seg,
                 c.10,pulse.mod.bc,pulse.flat.seg.2,c.12) 
+
+#write_csv(mill.travel,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_type.csv")
+
+#code not working with multiple transitions within one encounter, manually edited:
+mill.travel_new <- read_csv("mill.travel_type.csv")
+
+
+#plot milling to traveling change
+ggplot(mill.travel_new) +
+  geom_line(aes(x=t_index,y=pulse.flat),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=flatws),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=aws),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=dws),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=pulse.flat.seg),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=pulse.d),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=modws),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=pulse.a),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=uws),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=modws.seg),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=flatws.seg),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=pulse.mod),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=pulse.n),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=nws),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=c.13),color="gold2",size=1) +
+  geom_line(aes(x=t_index,y=nws.seq),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=modws.m),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=c.9),color="gold2",size=1) +
+  geom_line(aes(x=t_index,y=aws.seg),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=trill),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=rws),color="cyan4",size=1) +
+  geom_line(aes(x=t_index,y=pulse.mod.seg),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=c.10),color="gold2",size=1) +
+  geom_line(aes(x=t_index,y=pulse.mod.bc),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=pulse.flat.seg.2),color="darkseagreen",size=1) +
+  geom_line(aes(x=t_index,y=c.12),color="gold2",size=1) +
+  geom_vline(xintercept=0, size=1,lty=2) +
+  theme_classic() +
+  labs(x="Time",y="Count") +
+  ggtitle("Milling to traveling") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
+
+
+##ridge plot
+library(ggridges)
+ggplot(mill.travel_new) +
+  geom_density_ridges(aes(x=t_index,y=pulse.flat)) +
+  geom_density_ridges(aes(x=t_index,y=flatws)) +
+  theme_ridges()
+
+
+
 
 #create new dataframe for traveling to milling change 
 travel.mill <- behav_new %>% 
@@ -132,44 +180,14 @@ travel.mill <- behav_new %>%
                 uws,modws.seg,flatws.seg,pulse.mod,pulse.n,nws,c.13,nws.seq,modws.m,c.9,aws.seg,trill,rws,pulse.mod.seg,
                 c.10,pulse.mod.bc,pulse.flat.seg.2,c.12)
 
+#write_csv(travel.mill,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_type.csv")
 
-#plot milling to traveling change
-ggplot(mill.travel) +
-  geom_line(aes(x=t_index,y=pulse.flat),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=flatws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=aws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=dws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=pulse.flat.seg),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=pulse.d),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=modws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=pulse.a),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=uws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=modws.seg),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=flatws.seg),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=pulse.mod),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=pulse.n),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=nws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=c.13),color="gold2",size=1) +
-  geom_line(aes(x=t_index,y=nws.seq),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=modws.m),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=c.9),color="gold2",size=1) +
-  geom_line(aes(x=t_index,y=aws.seg),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=trill),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=rws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=pulse.mod.seg),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=c.10),color="gold2",size=1) +
-  geom_line(aes(x=t_index,y=pulse.mod.bc),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=pulse.flat.seg.2),color="darkseagreen",size=1) +
-  geom_line(aes(x=t_index,y=c.12),color="gold2",size=1) +
-  theme_classic() +
-  labs(x="Time",y="Count") +
-  ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
+#code not working with multiple transitions within one encounter, manually edited:
+travel.mill_new <- read_csv("travel.mill_type.csv")
 
 
 #plot traveling to milling change
-ggplot(travel.mill) +
+ggplot(travel.mill_new) +
   geom_line(aes(x=t_index,y=pulse.flat),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=flatws),color="cyan4",size=1) +
   geom_line(aes(x=t_index,y=aws),color="cyan4",size=1) +
@@ -196,6 +214,7 @@ ggplot(travel.mill) +
   geom_line(aes(x=t_index,y=pulse.mod.bc),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=pulse.flat.seg.2),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=c.12),color="gold2",size=1) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   theme_classic() +
   labs(x="Time",y="Count") +
   ggtitle("Traveling to milling") +
@@ -207,8 +226,7 @@ ggplot(travel.mill) +
 
 
 ###### Calf transitions
-
-#call type distribution- behav transition-only encounters
+#call type distribution- calf transition-only encounters
 calltype_count_calf <- data_total %>% 
   filter(encounter %in% c(3,5,7)) %>% 
   group_by(call_type,call_category) %>% 
@@ -242,7 +260,7 @@ calf_tran_type <- callrate_calltype %>%
 calf_new <- read_csv("calf_tran_type.csv")
 
 
-#create new dataframe for milling to traveling change
+#create new dataframe for calf to no calf change
 calf.nocalf <- calf_new %>% 
   dplyr::select(minute,calf_presence,difftime_s,difftime_next,flatws,pulse.flat,dws,aws,pulse.flat.seg,flatws.seg,pulse.d,
                 aws.seg,uws,pulse.mod,modws) %>% 
@@ -250,16 +268,6 @@ calf.nocalf <- calf_new %>%
                            calf_presence=='no'~difftime_s)) %>% 
   dplyr::select(minute,calf_presence,t_index,flatws,pulse.flat,dws,aws,pulse.flat.seg,flatws.seg,pulse.d,
                 aws.seg,uws,pulse.mod,modws) 
-
-#create new dataframe for traveling to milling change 
-nocalf.calf <- calf_new %>% 
-  dplyr::select(minute,calf_presence,difftime_s,difftime_next,flatws,pulse.flat,dws,aws,pulse.flat.seg,flatws.seg,pulse.d,
-                aws.seg,uws,pulse.mod,modws) %>% 
-  mutate(t_index=case_when(calf_presence=='no'~difftime_next,
-                           calf_presence=='yes'~difftime_s)) %>% 
-  dplyr::select(minute,calf_presence,t_index,flatws,pulse.flat,dws,aws,pulse.flat.seg,flatws.seg,pulse.d,
-                aws.seg,uws,pulse.mod,modws)
-
 
 #plot calf to no calf change
 colors <- c("flatws"="cyan4",
@@ -286,6 +294,7 @@ ggplot(calf.nocalf) +
   geom_line(aes(x=t_index,y=uws,color="uws"),size=1) +
   geom_line(aes(x=t_index,y=pulse.mod,color="pulse.mod"),size=1) +
   geom_line(aes(x=t_index,y=modws,color="modws"),size=1) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   theme_classic() +
   labs(x="Time",y="Count",color="Legend") +
   scale_color_manual(values=colors) +
@@ -294,8 +303,24 @@ ggplot(calf.nocalf) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
 
 
+
+
+#create new dataframe for no calf to calf change
+nocalf.calf <- calf_new %>% 
+  dplyr::select(minute,calf_presence,difftime_s,difftime_next,flatws,pulse.flat,dws,aws,pulse.flat.seg,flatws.seg,pulse.d,
+                aws.seg,uws,pulse.mod,modws) %>% 
+  mutate(t_index=case_when(calf_presence=='no'~difftime_next,
+                           calf_presence=='yes'~difftime_s)) %>% 
+  dplyr::select(minute,calf_presence,t_index,flatws,pulse.flat,dws,aws,pulse.flat.seg,flatws.seg,pulse.d,
+                aws.seg,uws,pulse.mod,modws)
+
+#write_csv(nocalf.calf,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/nocalf.calf_type.csv")
+
+#code not working with multiple transitions within one encounter, manually edited:
+nocalf.calf_new <- read_csv("nocalf.calf_type.csv")
+
 #plot no calf to calf change
-ggplot(nocalf.calf) +
+ggplot(nocalf.calf_new) +
   geom_line(aes(x=t_index,y=flatws),color="cyan4",size=1) +
   geom_line(aes(x=t_index,y=pulse.flat),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=dws),color="cyan4",size=1) +
@@ -307,6 +332,7 @@ ggplot(nocalf.calf) +
   geom_line(aes(x=t_index,y=uws),color="cyan4",size=1) +
   geom_line(aes(x=t_index,y=pulse.mod),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=modws),color="cyan4",size=1) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   theme_classic() +
   labs(x="Time",y="Count") +
   ggtitle("No calf to calf") +

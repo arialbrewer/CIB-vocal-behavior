@@ -161,7 +161,7 @@ ggplot(data=callrate_cattype %>% filter(encounter==20)) +
 
 
 
-####Behavioral transitions
+####### Behavioral transitions
 #filter by the 6 encounters where transitions occur and set transitions to time zero
 behav_tran_cat <- callrate_cattype %>% 
   filter(encounter %in% c(3,4,7,13,15,16)) %>% 
@@ -179,27 +179,24 @@ behav_tran_cat <- callrate_cattype %>%
 #manually added behav_next and difftime_next
 behav_new <- read_csv("behav_tran_cat.csv")
 
-
-#create new dataframe for milling to traveling change
+## create new dataframe for milling to traveling change
 mill.travel <- behav_new %>% 
   dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
   mutate(t_index=case_when(behavior=='Mill'~difftime_next,
                            behavior=='Travel'~difftime_s)) %>% 
   dplyr::select(minute,behavior,t_index,ws,pc,cc) 
+
+#write_csv(mill.travel,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_cat.csv")
   
-#create new dataframe for traveling to milling change 
-travel.mill <- behav_new %>% 
-  dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
-  mutate(t_index=case_when(behavior=='Travel'~difftime_next,
-                           behavior=='Mill'~difftime_s)) %>% 
-  dplyr::select(minute,behavior,t_index,ws,pc,cc)
-  
+#code not working with multiple transitions within one encounter, manually edited:
+mill.travel_new <- read_csv("mill.travel_cat.csv")
 
 #plot milling to traveling change
-ggplot(mill.travel) +
+ggplot(mill.travel_new) +
   geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
   geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=cc),color="gold2",size=1) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   theme_classic() +
   labs(x="Time",y="Count") +
   ggtitle("Milling to traveling") +
@@ -207,11 +204,25 @@ ggplot(mill.travel) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
 
 
+#create new dataframe for traveling to milling change 
+travel.mill <- behav_new %>% 
+  dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
+  mutate(t_index=case_when(behavior=='Travel'~difftime_next,
+                           behavior=='Mill'~difftime_s)) %>% 
+  dplyr::select(minute,behavior,t_index,ws,pc,cc)
+
+#write_csv(travel.mill,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_cat.csv")
+
+#code not working with multiple transitions within one encounter, manually edited:
+
+travel.mill_new <- read_csv("travel.mill_cat.csv")
+
 #plot traveling to milling change
-ggplot(travel.mill) +
-  geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
-  geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
+ggplot(travel.mill_new) +
+  #geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
+  #geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=cc),color="gold2",size=1) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   theme_classic() +
   labs(x="Time",y="Count") +
   ggtitle("Traveling to milling") +
@@ -239,19 +250,12 @@ calf_tran_cat <- callrate_cattype %>%
 calf_new <- read_csv("calf_tran_cat.csv")
 
 
-#create new dataframe for milling to traveling change
+#create new dataframe for calf to no calf change
 calf.nocalf <- calf_new %>% 
   dplyr::select(minute,calf_presence,difftime_s,difftime_next,ws,pc,cc) %>% 
   mutate(t_index=case_when(calf_presence=='yes'~difftime_next,
                            calf_presence=='no'~difftime_s)) %>% 
   dplyr::select(minute,calf_presence,t_index,ws,pc,cc) 
-
-#create new dataframe for traveling to milling change 
-nocalf.calf <- calf_new %>% 
-  dplyr::select(minute,calf_presence,difftime_s,difftime_next,ws,pc,cc) %>% 
-  mutate(t_index=case_when(calf_presence=='no'~difftime_next,
-                           calf_presence=='yes'~difftime_s)) %>% 
-  dplyr::select(minute,calf_presence,t_index,ws,pc,cc)
 
 
 #plot calf to no calf change
@@ -259,6 +263,7 @@ ggplot(calf.nocalf) +
   geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
   geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=cc),color="gold2",size=1) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   theme_classic() +
   labs(x="Time",y="Count") +
   ggtitle("Calf to no calf") +
@@ -266,17 +271,29 @@ ggplot(calf.nocalf) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
 
 
+#create new dataframe for no calf to calf change
+nocalf.calf <- calf_new %>% 
+  dplyr::select(minute,calf_presence,difftime_s,difftime_next,ws,pc,cc) %>% 
+  mutate(t_index=case_when(calf_presence=='no'~difftime_next,
+                           calf_presence=='yes'~difftime_s)) %>% 
+  dplyr::select(minute,calf_presence,t_index,ws,pc,cc)
+
+#write_csv(nocalf.calf,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/nocalf.calf_cat.csv")
+
+#code not working with multiple transitions within one encounter, manually edited:
+nocalf.calf_new <- read_csv("nocalf.calf_cat.csv")
+
 #plot no calf to calf change
-ggplot(nocalf.calf) +
+ggplot(nocalf.calf_new) +
   geom_line(aes(x=t_index,y=ws),color="cyan4",size=1) +
   geom_line(aes(x=t_index,y=pc),color="darkseagreen",size=1) +
   geom_line(aes(x=t_index,y=cc),color="gold2",size=1) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   theme_classic() +
   labs(x="Time",y="Count") +
   ggtitle("No calf to calf") +
   theme(plot.title=element_text(hjust=0.5)) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
-
 
 
 
