@@ -4,6 +4,8 @@
 
 #load packages
 library(tidyverse)
+library(viridis)
+library(ggridges)
 
 #read in data
 setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -124,9 +126,11 @@ mill.travel <- read_csv("mill.travel_type.csv") %>%
   pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a","uws",
                         "modws.seg","flatws.seg","pulse.mod","pulse.n","nws","c.13","nws.seq","modws.m","c.9",
                         "aws.seg","trill","rws","pulse.mod.seg","c.10","pulse.mod.bc","pulse.flat.seg.2","c.12"), 
-               names_to = "call_type", values_to = "num_calls")
+               names_to = "call_type", values_to = "num_calls") %>% 
+  mutate(call_type=as.factor(call_type))
 
-#plot milling to traveling change
+###Plots- milling to traveling
+#barplot
 ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) + 
   geom_bar(stat="identity") +
   theme_classic() +
@@ -134,21 +138,27 @@ ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) +
   labs(x="Time", y="Count",fill="Call type") +
   scale_y_continuous(expand=c(0,0)) +
   ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) 
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_fill_viridis(discrete=TRUE,option="D")
 
 
-
-##ridge plot
-library(ggridges)
-
+#ridge plot- having issue with plotting height
 ggplot(mill.travel) +
-  geom_density_ridges(aes(x=t_index,y=call_type)) 
+  geom_density_ridges(aes(x=t_index,y=reorder(call_type,num_calls),group=call_type, #height=num_calls,
+                          fill=call_type,alpha=0.8)) +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Milling to traveling") +
+  scale_fill_viridis(discrete=TRUE,option="D")
 
 
 #OR
 ggplot(mill.travel) +
-  geom_ridgeline(aes(x=t_index,y=call_type)) +
-  theme_ridges()
+  geom_ridgeline(aes(x=t_index,y=reorder(call_type,num_calls),height=num_calls,fill=call_type,alpha=0.8)) +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Milling to traveling") +
+  scale_fill_viridis(discrete=TRUE,option="D")
 
 
 
@@ -173,6 +183,13 @@ travel.mill <- read_csv("travel.mill_type.csv") %>%
                         "modws.seg","flatws.seg","pulse.mod","pulse.n","nws","c.13","nws.seq","modws.m","c.9",
                         "aws.seg","trill","rws","pulse.mod.seg","c.10","pulse.mod.bc","pulse.flat.seg.2","c.12"), 
                names_to = "call_type", values_to = "num_calls")
+
+#plot traveling to milling change
+
+
+
+
+
 
 
 
@@ -253,6 +270,10 @@ nocalf.calf_new <- read_csv("nocalf.calf_type.csv") %>%
                names_to = "call_type", values_to = "num_calls")
 
 #plot no calf to calf change
+
+
+
+
 
 
 

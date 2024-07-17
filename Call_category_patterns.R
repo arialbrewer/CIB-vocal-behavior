@@ -254,6 +254,7 @@ calf.nocalf <- calf_new %>%
                            calf_presence=='no'~difftime_s)) %>% 
   dplyr::select(minute,calf_presence,t_index,ws,pc,cc) 
 
+#pivot longer
 calf.nocalf <- calf.nocalf %>% 
   pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls")
 
