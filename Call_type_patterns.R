@@ -4,8 +4,9 @@
 
 #load packages
 library(tidyverse)
-library(viridis)
 library(ggridges)
+library(wesanderson)
+library(PNWColors)
 
 #read in data
 setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -139,26 +140,38 @@ ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) +
   scale_y_continuous(expand=c(0,0)) +
   ggtitle("Milling to traveling") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_viridis(discrete=TRUE,option="D")
+  scale_fill_manual(values=pnw_palette("Bay",n=26)) +
+  facet_wrap(~call_type)
+  
 
 
 #ridge plot- having issue with plotting height
-ggplot(mill.travel) +
-  geom_density_ridges(aes(x=t_index,y=reorder(call_type,num_calls),group=call_type, #height=num_calls,
-                          fill=call_type,alpha=0.8)) +
+ggplot(mill.travel,aes(x=t_index,y=reorder(call_type,num_calls), #height=num_calls,
+                       fill=call_type)) +
+  geom_density_ridges(alpha=0.8) +
+  theme_ridges(grid=F) +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   labs(x="Time", y="Call type") +
   ggtitle("Milling to traveling") +
-  scale_fill_viridis(discrete=TRUE,option="D")
-
+  scale_fill_manual(values=pnw_palette("Bay",n=26))
 
 #OR
-ggplot(mill.travel) +
-  geom_ridgeline(aes(x=t_index,y=reorder(call_type,num_calls),height=num_calls,fill=call_type,alpha=0.8)) +
+ggplot(mill.travel,aes(x=t_index,y=reorder(call_type,num_calls),group=call_type,height=num_calls,fill=call_type)) +
+  geom_density_ridges(alpha=0.8,stat="identity") +
+  theme_ridges(grid=F) +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   labs(x="Time", y="Call type") +
   ggtitle("Milling to traveling") +
-  scale_fill_viridis(discrete=TRUE,option="D")
+  scale_fill_manual(values=pnw_palette("Bay",n=26))
+
+#OR
+ggplot(mill.travel,aes(x=t_index,y=reorder(call_type,num_calls),height=num_calls,fill=call_type)) +
+  geom_ridgeline(alpha=0.8,stat="identity") +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Milling to traveling") +
+  scale_fill_manual(values=pnw_palette("Bay",n=26))
 
 
 
@@ -182,15 +195,22 @@ travel.mill <- read_csv("travel.mill_type.csv") %>%
   pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a","uws",
                         "modws.seg","flatws.seg","pulse.mod","pulse.n","nws","c.13","nws.seq","modws.m","c.9",
                         "aws.seg","trill","rws","pulse.mod.seg","c.10","pulse.mod.bc","pulse.flat.seg.2","c.12"), 
-               names_to = "call_type", values_to = "num_calls")
+               names_to = "call_type", values_to = "num_calls") %>% 
+  mutate(call_type=as.factor(call_type))
+
 
 #plot traveling to milling change
-
-
-
-
-
-
+#barplot
+ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_type)) + 
+  geom_bar(stat="identity") +
+  theme_classic() +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call type") +
+  scale_y_continuous(expand=c(0,0)) +
+  ggtitle("Traveling to milling") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_fill_manual(values=pnw_palette("Bay",n=26)) +
+  facet_wrap(~call_type)
 
 
 
@@ -242,11 +262,21 @@ calf.nocalf <- calf_new %>%
 calf.nocalf <- calf.nocalf %>% 
   pivot_longer(cols = c("flatws","pulse.flat","dws","aws","pulse.flat.seg","flatws.seg","pulse.d","aws.seg","uws","pulse.mod",
                         "modws",), 
-               names_to = "call_type", values_to = "num_calls")
+               names_to = "call_type", values_to = "num_calls") %>% 
+  mutate(call_type=as.factor(call_type))
 
 #plot calf to no calf change
-
-
+#barplot
+ggplot(data=calf.nocalf, aes(x=t_index,y=num_calls,fill=call_type)) + 
+  geom_bar(stat="identity") +
+  theme_classic() +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call type") +
+  scale_y_continuous(expand=c(0,0)) +
+  ggtitle("Calf to no calf") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_fill_manual(values=pnw_palette("Bay",n=11)) +
+  facet_wrap(~call_type)
 
 
 
@@ -264,13 +294,24 @@ calf.nocalf <- calf.nocalf %>%
 #write_csv(nocalf.calf,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/nocalf.calf_type.csv")
 
 #read in updated data and change call types from wider to longer format
-nocalf.calf_new <- read_csv("nocalf.calf_type.csv") %>% 
+nocalf.calf <- read_csv("nocalf.calf_type.csv") %>% 
   pivot_longer(cols = c("flatws","pulse.flat","dws","aws","pulse.flat.seg","flatws.seg","pulse.d","aws.seg","uws","pulse.mod",
                         "modws",), 
-               names_to = "call_type", values_to = "num_calls")
+               names_to = "call_type", values_to = "num_calls") %>% 
+  mutate(call_type=as.factor(call_type))
 
 #plot no calf to calf change
-
+#barplot
+ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_type)) + 
+  geom_bar(stat="identity") +
+  theme_classic() +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call type") +
+  scale_y_continuous(expand=c(0,0)) +
+  ggtitle("No calf to calf") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_fill_manual(values=pnw_palette("Bay",n=11)) +
+  facet_wrap(~call_type)
 
 
 

@@ -114,7 +114,7 @@ ggplot(data=callrate_cattype %>% filter(encounter==13)) +
   geom_line(aes(x=minute,y=cc),color="gold2",size=1) +
   theme_classic() +
   labs(x="Minutes since start of encounter",y="Count")+
-  ggtitle("2021- encounter 13") +
+  ggtitle("2022- encounter 13") +
   theme(plot.title=element_text(hjust=0.5)) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=2)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,200,by=10)) 
@@ -126,7 +126,7 @@ ggplot(data=callrate_cattype %>% filter(encounter==15)) +
   geom_line(aes(x=minute,y=cc),color="gold2",size=1) +
   theme_classic() +
   labs(x="Minutes since start of encounter",y="Count")+
-  ggtitle("2021- encounter 15") +
+  ggtitle("2022- encounter 15") +
   theme(plot.title=element_text(hjust=0.5)) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=2)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,300,by=5)) 
@@ -138,7 +138,7 @@ ggplot(data=callrate_cattype %>% filter(encounter==16)) +
   geom_line(aes(x=minute,y=cc),color="gold2",size=1) +
   theme_classic() +
   labs(x="Minutes since start of encounter",y="Count")+
-  ggtitle("2021- encounter 16") +
+  ggtitle("2022- encounter 16") +
   theme(plot.title=element_text(hjust=0.5)) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,10,by=1)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,80,by=5)) 
@@ -150,7 +150,7 @@ ggplot(data=callrate_cattype %>% filter(encounter==20)) +
   geom_line(aes(x=minute,y=cc),color="gold2",size=1) +
   theme_classic() +
   labs(x="Minutes since start of encounter",y="Count")+
-  ggtitle("2021- encounter 20") +
+  ggtitle("2022- encounter 20") +
   theme(plot.title=element_text(hjust=0.5)) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,50,by=2)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,80,by=5)) 
