@@ -5,7 +5,6 @@
 #load packages
 library(tidyverse)
 library(ggridges)
-library(wesanderson)
 library(PNWColors)
 
 #read in data
