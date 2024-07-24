@@ -121,28 +121,27 @@ behav <- read_csv("behav_tran_type.csv")
 #code not working with multiple transitions within one encounter, will manually edit
 #write_csv(mill.travel,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_type.csv")
 
-#read in updated data and change call types from wider to longer format
+#read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
 mill.travel <- read_csv("mill.travel_type.csv") %>% 
+  select(-flatws.seg,-pulse.flat.seg.2,-pulse.mod,-pulse.mod.bc,-aws.seg) %>% 
   pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a","uws",
-                        "modws.seg","flatws.seg","pulse.mod","pulse.n","nws","c.13","nws.seq","modws.m","c.9",
-                        "aws.seg","trill","rws","pulse.mod.seg","c.10","pulse.mod.bc","pulse.flat.seg.2","c.12"), 
+                        "modws.seg","pulse.n","nws","c.13","nws.seq","modws.m","c.9","trill","rws","pulse.mod.seg","c.10","c.12"), 
                names_to = "call_type", values_to = "num_calls") %>% 
   mutate(call_type=as.factor(call_type))
 
 ###Plots- milling to traveling
-#barplot
 ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) + 
   geom_bar(stat="identity") +
   theme_classic() +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   labs(x="Time", y="Count",fill="Call type") +
   scale_y_continuous(expand=c(0,0)) +
+  xlim(-15,5) +
   ggtitle("Milling to traveling") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=26)) +
+  scale_fill_manual(values=pnw_palette("Bay",n=21)) +
   facet_wrap(~call_type)
   
-
 
 #ridge plot- having issue with plotting height
 ggplot(mill.travel,aes(x=t_index,y=reorder(call_type,num_calls), #height=num_calls,
@@ -174,7 +173,6 @@ ggplot(mill.travel,aes(x=t_index,y=reorder(call_type,num_calls),height=num_calls
 
 
 
-
 #create new dataframe for traveling to milling change 
 # travel.mill <- behav_new %>% 
 #   dplyr::select(minute,behavior,difftime_s,difftime_next,pulse.flat, flatws,aws,dws,pulse.flat.seg, pulse.d,modws,pulse.a,
@@ -189,26 +187,25 @@ ggplot(mill.travel,aes(x=t_index,y=reorder(call_type,num_calls),height=num_calls
 #code not working with multiple transitions within one encounter, will manually edit
 #write_csv(travel.mill,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_type.csv")
 
-#read in updated data and change call types from wider to longer format
+#read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
 travel.mill <- read_csv("travel.mill_type.csv") %>% 
-  pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a","uws",
-                        "modws.seg","flatws.seg","pulse.mod","pulse.n","nws","c.13","nws.seq","modws.m","c.9",
-                        "aws.seg","trill","rws","pulse.mod.seg","c.10","pulse.mod.bc","pulse.flat.seg.2","c.12"), 
+  select(-c.10,-c.9,-flatws.seg,-modws,-modws.m,-modws.seg,-nws.seq,-pulse.flat.seg.2,-pulse.mod.bc,-pulse.mod.seg,-rws,-trill) %>% 
+  pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","pulse.a","uws","pulse.mod","pulse.n","nws","c.13","aws.seg","c.12"), 
                names_to = "call_type", values_to = "num_calls") %>% 
   mutate(call_type=as.factor(call_type))
 
 
 #plot traveling to milling change
-#barplot
 ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_type)) + 
   geom_bar(stat="identity") +
   theme_classic() +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   labs(x="Time", y="Count",fill="Call type") +
   scale_y_continuous(expand=c(0,0)) +
+  xlim(-15,5) +
   ggtitle("Traveling to milling") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=26)) +
+  scale_fill_manual(values=pnw_palette("Bay",n=14)) +
   facet_wrap(~call_type)
 
 
@@ -258,26 +255,25 @@ calf.nocalf <- calf_new %>%
   dplyr::select(minute,calf_presence,t_index,flatws,pulse.flat,dws,aws,pulse.flat.seg,flatws.seg,pulse.d,
                 aws.seg,uws,pulse.mod,modws) 
 
+#read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
 calf.nocalf <- calf.nocalf %>% 
-  pivot_longer(cols = c("flatws","pulse.flat","dws","aws","pulse.flat.seg","flatws.seg","pulse.d","aws.seg","uws","pulse.mod",
-                        "modws",), 
+  select(-flatws.seg,-modws,-pulse.d,-pulse.flat,-pulse.flat.seg,-pulse.mod,-uws) %>% 
+  pivot_longer(cols = c("flatws","dws","aws","aws.seg"), 
                names_to = "call_type", values_to = "num_calls") %>% 
   mutate(call_type=as.factor(call_type))
 
 #plot calf to no calf change
-#barplot
 ggplot(data=calf.nocalf, aes(x=t_index,y=num_calls,fill=call_type)) + 
   geom_bar(stat="identity") +
   theme_classic() +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   labs(x="Time", y="Count",fill="Call type") +
   scale_y_continuous(expand=c(0,0)) +
+  xlim(-15,5) +
   ggtitle("Calf to no calf") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=11)) +
+  scale_fill_manual(values=pnw_palette("Bay",n=4)) +
   facet_wrap(~call_type)
-
-
 
 
 #create new dataframe for no calf to calf change
@@ -292,28 +288,104 @@ ggplot(data=calf.nocalf, aes(x=t_index,y=num_calls,fill=call_type)) +
 #code not working with multiple transitions within one encounter, will manually edit
 #write_csv(nocalf.calf,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/nocalf.calf_type.csv")
 
-#read in updated data and change call types from wider to longer format
+#read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
 nocalf.calf <- read_csv("nocalf.calf_type.csv") %>% 
-  pivot_longer(cols = c("flatws","pulse.flat","dws","aws","pulse.flat.seg","flatws.seg","pulse.d","aws.seg","uws","pulse.mod",
-                        "modws",), 
+  select(-aws.seg,-modws,-pulse.d,-pulse.flat,-pulse.flat.seg,-pulse.mod,-uws) %>% 
+  pivot_longer(cols = c("flatws","dws","aws","flatws.seg"),
                names_to = "call_type", values_to = "num_calls") %>% 
   mutate(call_type=as.factor(call_type))
 
 #plot no calf to calf change
-#barplot
 ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_type)) + 
   geom_bar(stat="identity") +
   theme_classic() +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   labs(x="Time", y="Count",fill="Call type") +
   scale_y_continuous(expand=c(0,0)) +
+  xlim(-15,5) +
   ggtitle("No calf to calf") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=11)) +
+  scale_fill_manual(values=pnw_palette("Bay",n=4)) +
   facet_wrap(~call_type)
 
 
 
 
+############### New data format for behavior ridge plots, data above has calls organized in counts per minute, ridge wants one call per row
+calls <- data_total %>%
+  filter(encounter %in% c(3,4,7)) %>% 
+  select(-tide,-group_size,-calf_presence) %>% 
+  mutate(behavior = as.factor(behavior),
+         encounter = as.factor(encounter),
+         date = mdy(date),
+         time = hms(time)) %>% 
+  group_by(encounter) %>% 
+  mutate(minute=row_number())
+
+#need to manually edit minute since multiple calls happening per minute
+#write_csv(calls,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/calls.csv")
+
+#I then manually calculated behav_s,difftime_s,behav_next,difftime_next
+#read in updated data
+behav_calls <- read_csv("calls.csv")
+
+#create new dataframe for milling to traveling change
+mill.travel_calls <- behav_calls %>%
+  dplyr::select(time,encounter,minute,behavior,call_type,call_category,difftime_s,difftime_next) %>%
+  mutate(t_index=case_when(behavior=='Mill'~difftime_next,
+                           behavior=='Travel'~difftime_s)) %>%
+  dplyr::select(time,encounter,minute,behavior,call_type,call_category,t_index) %>% 
+  mutate(call_type=as.factor(call_type),
+         call_category=as.factor(call_category))
+  
+
+###Ridge plot- milling to traveling
+ggplot(mill.travel_calls,aes(x=t_index,y=call_type, fill=call_type)) +
+  geom_density_ridges(alpha=0.8) +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  xlim(-15,5) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Milling to traveling") +
+  scale_fill_manual(values=pnw_palette("Bay",n=26))
+
+#from amy's code
+ggplot(mill.travel_calls,aes(x=t_index,y=call_type, fill=call_type)) +
+  geom_density_ridges(scale=2,alpha=0.7) +
+  theme_ridges(grid=F) +
+  theme(legend.position = "none",
+        panel.spacing=unit(0.01,"lines")) +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  xlim(-15,5) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Milling to traveling") +
+  scale_fill_manual(values=pnw_palette("Bay",n=26))
 
 
+#create new dataframe for traveling to milling change
+# travel.mill_calls <- behav_calls %>%
+#   dplyr::select(time,encounter,minute,behavior,call_type,call_category,difftime_s,difftime_next) %>%
+#   mutate(t_index=case_when(behavior=='Travel'~difftime_next,
+#                            behavior=='Mill'~difftime_s)) %>%
+#   dplyr::select(time,encounter,minute,behavior,call_type,call_category,t_index) %>% 
+#   mutate(call_type=as.factor(call_type),
+#          call_category=as.factor(call_category))
+
+#code not working with multiple transitions within one encounter, will manually edit
+#write_csv(travel.mill_calls,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_calls.csv")
+
+#read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
+travel.mill_calls <- read_csv("travel.mill_calls.csv") %>% 
+  mutate(call_type=as.factor(call_type),
+         call_category=as.factor(call_category))
+
+
+###Ridge plot- milling to traveling
+ggplot(travel.mill_calls,aes(x=t_index,y=call_type, fill=call_type)) +
+  geom_density_ridges(alpha=0.8) +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  xlim(-15,5) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Traveling to milling") +
+  scale_fill_manual(values=pnw_palette("Bay",n=26))
