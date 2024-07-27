@@ -343,6 +343,7 @@ mill.travel_calls <- behav_calls %>%
 ggplot(mill.travel_calls,aes(x=t_index,y=call_type, fill=call_type)) +
   geom_density_ridges(alpha=0.8) +
   theme_ridges(grid=F) +
+  theme(legend.position = "none") +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   xlim(-15,5) +
   labs(x="Time", y="Call type") +
@@ -384,8 +385,11 @@ travel.mill_calls <- read_csv("travel.mill_calls.csv") %>%
 ggplot(travel.mill_calls,aes(x=t_index,y=call_type, fill=call_type)) +
   geom_density_ridges(alpha=0.8) +
   theme_ridges(grid=F) +
+  theme(legend.position = "none") +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   xlim(-15,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
   scale_fill_manual(values=pnw_palette("Bay",n=26))
+
+
