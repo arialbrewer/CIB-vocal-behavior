@@ -13,7 +13,7 @@ library(see)
 library(gratia)
 
 #load data
-setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
+setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
 acoustic_files <- list.files(pattern = "acoustic.csv")
 behavior_files <- list.files(pattern = "behavior.csv")
 

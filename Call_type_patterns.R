@@ -8,7 +8,7 @@ library(ggridges)
 library(PNWColors)
 
 #read in data
-setwd("C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
+setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
 acoustic_files <- intersect(list.files(pattern = "ER21"),list.files(pattern="acoustic.csv"))
 behavior_files <- intersect(list.files(pattern = "ER21"),list.files(pattern="behavior.csv"))
 
@@ -312,15 +312,15 @@ ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_type)) +
 
 
 ############### New data format for behavior ridge plots, data above has calls organized in counts per minute, ridge wants one call per row
-calls <- data_total %>%
-  filter(encounter %in% c(3,4,7)) %>% 
-  select(-tide,-group_size,-calf_presence) %>% 
-  mutate(behavior = as.factor(behavior),
-         encounter = as.factor(encounter),
-         date = mdy(date),
-         time = hms(time)) %>% 
-  group_by(encounter) %>% 
-  mutate(minute=row_number())
+# calls <- data_total %>%
+#   filter(encounter %in% c(3,4,7)) %>% 
+#   select(-tide,-group_size,-calf_presence) %>% 
+#   mutate(behavior = as.factor(behavior),
+#          encounter = as.factor(encounter),
+#          date = mdy(date),
+#          time = hms(time)) %>% 
+#   group_by(encounter) %>% 
+#   mutate(minute=row_number())
 
 #need to manually edit minute since multiple calls happening per minute
 #write_csv(calls,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/calls.csv")
