@@ -176,21 +176,41 @@ ggplot(data=callrate_cattype %>% filter(encounter==20)) +
 behav <- read_csv("behav_tran_cat.csv")
 
 ## create new dataframe for milling to traveling change
-# mill.travel <- behav %>% 
-#   dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
+# mill.travel <- behav %>%
+#   dplyr::select(date,minute,encounter,behavior,difftime_s,difftime_next,ws,pc,cc) %>%
 #   mutate(t_index=case_when(behavior=='Mill'~difftime_next,
-#                            behavior=='Travel'~difftime_s)) %>% 
-#   dplyr::select(minute,behavior,t_index,ws,pc,cc) 
+#                            behavior=='Travel'~difftime_s)) %>%
+#   dplyr::select(date,minute,encounter,behavior,t_index,ws,pc,cc)
 
 #code not working with multiple transitions within one encounter, will manually edit
-#write_csv(mill.travel,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_cat.csv")
+# write_csv(mill.travel,"C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_cat.csv")
   
 #read in updated data and change call categories from wider to longer format
 mill.travel <- read_csv("mill.travel_cat.csv") %>% 
-  pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls")
+  pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls") %>% 
+  mutate(date = mdy(date),
+         minute=as.factor(minute),
+         encounter = as.factor(encounter),
+         behavior = as.factor(behavior)) %>% 
+  group_by(encounter)
   
 #plot milling to traveling change
 pal <- c("gold2","darkseagreen","cyan4")
+
+#line 
+ggplot(data=mill.travel,aes(x=t_index,y=num_calls,group=encounter,color=call_cat)) + 
+  geom_line(size=1) +
+  theme_classic() +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_color_manual(values=pal) +
+  ggtitle("Milling to traveling") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  facet_wrap(~call_cat)
+
+
+#bar
 ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_cat)) + 
   geom_bar(stat="identity") +
   theme_classic() +
@@ -199,24 +219,45 @@ ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_cat)) +
   scale_y_continuous(expand=c(0,0)) +
   scale_fill_manual(values=pal) +
   ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) 
+  theme(plot.title=element_text(hjust=0.5)) +
+  facet_wrap(~call_cat)
 
 
 #create new dataframe for traveling to milling change 
-# travel.mill <- behav_new %>% 
-#   dplyr::select(minute,behavior,difftime_s,difftime_next,ws,pc,cc) %>% 
+# travel.mill <- behav %>%
+#   dplyr::select(date,minute,encounter,behavior,difftime_s,difftime_next,ws,pc,cc) %>%
 #   mutate(t_index=case_when(behavior=='Travel'~difftime_next,
-#                            behavior=='Mill'~difftime_s)) %>% 
-#   dplyr::select(minute,behavior,t_index,ws,pc,cc)
+#                            behavior=='Mill'~difftime_s)) %>%
+#   dplyr::select(date,minute,encounter,behavior,t_index,ws,pc,cc)
 
 #code not working with multiple transitions within one encounter, will manually edit
-#write_csv(travel.mill,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_cat.csv")
+#write_csv(travel.mill,"C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_cat.csv")
 
 #read in updated data and change call categories from wider to longer format
 travel.mill <- read_csv("travel.mill_cat.csv") %>% 
-  pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls")
+  pivot_longer(cols = c("ws","pc","cc"), names_to = "call_cat", values_to = "num_calls") %>% 
+  mutate(date = mdy(date),
+         minute=as.factor(minute),
+         encounter = as.factor(encounter),
+         behavior = as.factor(behavior)) %>% 
+  group_by(encounter)
+
 
 #plot milling to traveling change
+#line 
+ggplot(data=travel.mill,aes(x=t_index,y=num_calls,group=encounter,color=call_cat)) + 
+  geom_line(size=1) +
+  theme_classic() +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call category") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_color_manual(values=pal) +
+  ggtitle("Milling to traveling") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  facet_wrap(~call_cat)
+
+
+#bar
 ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_cat)) + 
   geom_bar(stat="identity") +
   theme_classic() +
@@ -224,8 +265,10 @@ ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_cat)) +
   labs(x="Time", y="Count",fill="Call category") +
   scale_y_continuous(expand=c(0,0)) +
   scale_fill_manual(values=pal) +
-  ggtitle("Traveling to milling") +
-  theme(plot.title=element_text(hjust=0.5)) 
+  ggtitle("Milling to traveling") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  facet_wrap(~call_cat)
+
 
 
 
