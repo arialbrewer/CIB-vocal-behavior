@@ -105,14 +105,14 @@ ggplot(data=calltype_count_behav, aes(x=number, y=reorder(call_type,number),fill
 #write_csv(behav_tran_type,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/behav_tran_type.csv")
 
 #manually added behav_next and difftime_next
-#behav <- read_csv("behav_tran_type.csv")
+behav <- read_csv("behav_tran_type.csv")
 
 
 
 ###create new dataframe for milling to traveling change
 # mill.travel <- behav %>%
-#   dplyr::select(date,minute,encounter,behavior,difftime_s,difftime_next,pulse.flat, flatws,aws,dws,pulse.flat.seg, pulse.d,modws,pulse.a,
-#                 uws,modws.seg,flatws.seg,pulse.mod,pulse.n,nws,c.13,nws.seq,modws.m,c.9,aws.seg,trill,rws,pulse.mod.seg,
+#   dplyr::select(date,minute,encounter,behavior,difftime_s,difftime_next,pulse.flat, flatws,aws,dws,pulse.flat.seg, pulse.d,
+#                 modws,pulse.a,uws,modws.seg,flatws.seg,pulse.mod,pulse.n,nws,c.13,nws.seq,modws.m,c.9,aws.seg,trill,rws,pulse.mod.seg,
 #                 c.10,pulse.mod.bc,pulse.flat.seg.2,c.12) %>%
 #   mutate(t_index=case_when(behavior=='Mill'~difftime_next,
 #                            behavior=='Travel'~difftime_s)) %>%
@@ -126,63 +126,55 @@ ggplot(data=calltype_count_behav, aes(x=number, y=reorder(call_type,number),fill
 
 #code not working with multiple transitions within one encounter, will manually edit
 # write_csv(mill.travel,"C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_type.csv")
+#removed encounter 7 because it only has travel to mill transition
 
-#read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
+
+#read in updated data-remove call types with no pattern and change remaining call types from wider to longer format
 mill.travel <- read_csv("mill.travel_type.csv") %>% 
-  dplyr::select(-flatws.seg,-pulse.flat.seg.2,-pulse.mod,-pulse.mod.bc,-aws.seg) %>% 
+  #dplyr::select(-flatws.seg,-pulse.flat.seg.2,-pulse.mod,-pulse.mod.bc,-aws.seg) %>% 
   pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws",
                         "pulse.a","uws","modws.seg","pulse.n","nws","c.13","nws.seq","modws.m",
-                        "c.9","trill","rws","pulse.mod.seg","c.10","c.12"), 
+                        "c.9","trill","rws","pulse.mod.seg","c.10","c.12",
+                        "flatws.seg","pulse.flat.seg.2","pulse.mod","pulse.mod.bc","aws.seg"), 
                names_to = "call_type", values_to = "num_calls") %>% 
   mutate(date = mdy(date),
          minute=as.factor(minute),
          encounter = as.factor(encounter),
          behavior = as.factor(behavior),
+         behavior2 = as.factor(behavior2),
+         transition = as.factor(transition),
          call_type=as.factor(call_type)) %>% 
-  group_by(encounter)
+  group_by(transition,encounter)
 
 
 ###Plots- milling to traveling
 #barplot by call type 
-ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) + 
-  geom_bar(stat="identity") +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Call type") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=21)) +
-  facet_wrap(~call_type)
+# ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) + 
+#   geom_bar(stat="identity") +
+#   theme_classic() +
+#   geom_vline(xintercept=0, size=0.5,lty=2) +
+#   labs(x="Time", y="Count",fill="Call type") +
+#   scale_y_continuous(expand=c(0,0)) +
+#   xlim(-15,5) +
+#   ggtitle("Milling to traveling") +
+#   theme(plot.title=element_text(hjust=0.5)) +
+#   scale_fill_manual(values=pnw_palette("Bay",n=21)) +
+#   facet_wrap(~call_type)
 
 #barplot by encounter- need to zoom out of -15 to 5 to see encounter 3 and 6
-ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=encounter)) + 
-  geom_bar(stat="identity") +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Encounter") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=3)) +
-  facet_wrap(~call_type)
-  
-#Line plot by call type
-ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=call_type)) + 
-  geom_line(size=1) +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Call type") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_color_manual(values=pnw_palette("Bay",n=21)) +
-  facet_wrap(~call_type)
+# ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=encounter)) + 
+#   geom_bar(stat="identity") +
+#   theme_classic() +
+#   geom_vline(xintercept=0, size=0.5,lty=2) +
+#   labs(x="Time", y="Count",fill="Encounter") +
+#   scale_y_continuous(expand=c(0,0)) +
+#   xlim(-15,5) +
+#   ggtitle("Milling to traveling") +
+#   theme(plot.title=element_text(hjust=0.5)) +
+#   scale_fill_manual(values=pnw_palette("Bay",n=3)) +
+#   facet_wrap(~call_type)
 
-#Line plot by encounter- need to zoom out of -15 to 5 to see enc. 3 and 7
+#Line plot
 ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=encounter)) + 
   geom_line(size=1) +
   theme_classic() +
@@ -192,37 +184,23 @@ ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=encount
   xlim(-15,5) +
   ggtitle("Milling to traveling") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_color_manual(values=pnw_palette("Bay",n=3)) +
+  scale_color_manual(values=pnw_palette("Bay",n=2)) +
   facet_wrap(~call_type)
+
 
 ##faceted by encounter
 #bar plot
-ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) + 
-  geom_bar(stat="identity") +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Encounter") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=21)) +
-  facet_wrap(~encounter)
-
-
-#Line plot by encounter- need to zoom out of -15 to 5 to see enc. 3 and 7
-ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=call_type)) + 
-  geom_line(size=1) +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Call type") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Milling to traveling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_color_manual(values=pnw_palette("Bay",n=21)) +
-  facet_wrap(~encounter)
-
+# ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) + 
+#   geom_bar(stat="identity") +
+#   theme_classic() +
+#   geom_vline(xintercept=0, size=0.5,lty=2) +
+#   labs(x="Time", y="Count",fill="Encounter") +
+#   scale_y_continuous(expand=c(0,0)) +
+#   xlim(-15,5) +
+#   ggtitle("Milling to traveling") +
+#   theme(plot.title=element_text(hjust=0.5)) +
+#   scale_fill_manual(values=pnw_palette("Bay",n=21)) +
+#   facet_wrap(~encounter)
 
 
 
@@ -239,61 +217,52 @@ ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=call_ty
 
 #code not working with multiple transitions within one encounter, will manually edit
 # write_csv(travel.mill,"C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_type.csv")
+#removed encounter 4 because it only has mill to travel transition
 
 #read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
 travel.mill <- read_csv("travel.mill_type.csv") %>% 
-  dplyr::select(-c.10,-c.9,-flatws.seg,-modws,-modws.m,-modws.seg,-nws.seq,-pulse.flat.seg.2,-pulse.mod.bc,-pulse.mod.seg,-rws,-trill) %>% 
-  pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","pulse.a","uws","pulse.mod","pulse.n","nws","c.13","aws.seg","c.12"), 
+  #dplyr::select(-c.10,-c.9,-flatws.seg,-modws,-modws.m,-modws.seg,-nws.seq,-pulse.flat.seg.2,-pulse.mod.bc,-pulse.mod.seg,-rws,-trill) %>% 
+  pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","pulse.a","uws","pulse.mod","pulse.n","nws","c.13","aws.seg","c.12",
+                        "c.10","c.9","flatws.seg","modws","modws.m","modws.seg","nws.seq","pulse.flat.seg.2","pulse.mod.bc","pulse.mod.seg","rws","trill"), 
                names_to = "call_type", values_to = "num_calls") %>% 
   mutate(date = mdy(date),
          minute=as.factor(minute),
          encounter = as.factor(encounter),
          behavior = as.factor(behavior),
+         behavior2 = as.factor(behavior2),
+         transition = as.factor(transition),
          call_type=as.factor(call_type)) %>% 
-  group_by(encounter)
+  group_by(transition,encounter)
 
 
 ###Plots- traveling to milling 
 #barplot by call type
-ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_type)) + 
-  geom_bar(stat="identity") +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Call type") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Traveling to milling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=14)) +
-  facet_wrap(~call_type)
+# ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_type)) + 
+#   geom_bar(stat="identity") +
+#   theme_classic() +
+#   geom_vline(xintercept=0, size=0.5,lty=2) +
+#   labs(x="Time", y="Count",fill="Call type") +
+#   scale_y_continuous(expand=c(0,0)) +
+#   xlim(-15,5) +
+#   ggtitle("Traveling to milling") +
+#   theme(plot.title=element_text(hjust=0.5)) +
+#   scale_fill_manual(values=pnw_palette("Bay",n=14)) +
+#   facet_wrap(~call_type)
 
 #barplot by encounter
-ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=encounter)) + 
-  geom_bar(stat="identity") +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Encounter") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Traveling to milling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=3)) +
-  facet_wrap(~call_type)
+# ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=encounter)) + 
+#   geom_bar(stat="identity") +
+#   theme_classic() +
+#   geom_vline(xintercept=0, size=0.5,lty=2) +
+#   labs(x="Time", y="Count",fill="Encounter") +
+#   scale_y_continuous(expand=c(0,0)) +
+#   xlim(-15,5) +
+#   ggtitle("Traveling to milling") +
+#   theme(plot.title=element_text(hjust=0.5)) +
+#   scale_fill_manual(values=pnw_palette("Bay",n=3)) +
+#   facet_wrap(~call_type)
 
 #Line plot by call type
-ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=call_type)) + 
-  geom_line(size=1) +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Call type") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Traveling to milling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_color_manual(values=pnw_palette("Bay",n=14)) +
-  facet_wrap(~call_type)
-
-#Line plot by encounter
 ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=encounter)) + 
   geom_line(size=1) +
   theme_classic() +
@@ -303,35 +272,9 @@ ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=encount
   xlim(-15,5) +
   ggtitle("Traveling to milling") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_color_manual(values=pnw_palette("Bay",n=3)) +
+  scale_color_manual(values=pnw_palette("Bay",n=2)) +
   facet_wrap(~call_type)
 
-##faceted by encounter
-#bar plot
-ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_type)) + 
-  geom_bar(stat="identity") +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Encounter") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Traveling to milling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_fill_manual(values=pnw_palette("Bay",n=14)) +
-  facet_wrap(~encounter)
-
-#Line plot 
-ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=call_type)) + 
-  geom_line(size=1) +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Call type") +
-  scale_y_continuous(expand=c(0,0)) +
-  xlim(-15,5) +
-  ggtitle("Traveling to milling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_color_manual(values=pnw_palette("Bay",n=14)) +
-  facet_wrap(~encounter)
 
 
 
@@ -436,7 +379,7 @@ ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_type)) +
 
 
 ############### New data format for behavior ridge plots, data above has calls organized in counts per minute, ridge wants one call per row
-# calls <- data_total %>%
+# behav_tran_type_long <- data_total %>%
 #   filter(encounter %in% c(3,4,7)) %>% 
 #   select(-tide,-group_size,-calf_presence) %>% 
 #   mutate(behavior = as.factor(behavior),
@@ -447,36 +390,45 @@ ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_type)) +
 #   mutate(minute=row_number())
 
 #need to manually edit minute since multiple calls happening per minute
-#write_csv(calls,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/calls.csv")
+#write_csv(behav_tran_type_long,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/behav_tran_type_long.csv")
 
 #I then manually calculated behav_s,difftime_s,behav_next,difftime_next
 #read in updated data
-behav_calls <- read_csv("calls.csv")
+#behav_ridge <- read_csv("behav_tran_type_long.csv")
+
 
 #create new dataframe for milling to traveling change
-mill.travel_calls <- behav_calls %>%
-  dplyr::select(date,time,encounter,minute,behavior,call_type,call_category,difftime_s,difftime_next) %>%
-  mutate(t_index=case_when(behavior=='Mill'~difftime_next,
-                           behavior=='Travel'~difftime_s)) %>%
-  dplyr::select(date,time,encounter,minute,behavior,call_type,call_category,t_index) %>% 
+# mill.travel_ridge <- behav_ridge %>%
+#   dplyr::select(date,time,encounter,minute,behavior,call_type,call_category,difftime_s,difftime_next) %>%
+#   mutate(t_index=case_when(behavior=='Mill'~difftime_next,
+#                            behavior=='Travel'~difftime_s)) %>%
+#   dplyr::select(date,time,encounter,minute,behavior,call_type,call_category,t_index) 
+
+#code not working with multiple transitions within one encounter, will manually edit
+#write_csv(mill.travel_ridge,"C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_ridge.csv")
+#removed encounter 7 because it only has travel to mill transition and first travel of enc 3
+
+#read in updated data
+mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>% 
   mutate(date = mdy(date),
-         time = hm(time),
+         time = hms(time),
          minute=as.factor(minute),
          encounter = as.factor(encounter),
          behavior = as.factor(behavior),
          call_type=as.factor(call_type),
          call_category=as.factor(call_category)) %>% 
   na.omit() %>% 
-  #remove calls types that only occur once and have no pattern
-  filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a",
-    "uws","modws.seg","pulse.n","nws","c.13","nws.seq","modws.m","c.9","trill",
-    "rws","pulse.mod.seg","c.10")) %>% 
   group_by(encounter)
-  
+  #remove calls types that only occur once and have no pattern
+  # #filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a",
+  #   "uws","modws.seg","pulse.n","nws","c.13","nws.seq","modws.m","c.9","trill",
+  #   "rws","pulse.mod.seg","c.10")) 
+
+
 
 ###Ridge plot- milling to traveling
 #by call type
-ggplot(mill.travel_calls, aes(x=t_index,y=call_type, fill=call_type)) +
+ggplot(mill.travel_ridge, aes(x=t_index,y=call_type, fill=call_type)) +
   geom_density_ridges(alpha=0.8) +
   theme_ridges(grid=F) +
   theme(legend.position = "none") +
@@ -484,34 +436,39 @@ ggplot(mill.travel_calls, aes(x=t_index,y=call_type, fill=call_type)) +
   xlim(-15,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Milling to traveling") +
-  scale_fill_manual(values=pnw_palette("Bay",n=20))
+  scale_fill_manual(values=pnw_palette("Bay",n=22))
 
 #reordered and colored by call category
 pal <- c("gold2","darkseagreen","cyan4")
-ggplot(mill.travel_calls, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
+ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.8) +
   theme_ridges(grid=F) +
-  theme(legend.position = "none") +
+  #theme(legend.position = "none") +
   geom_vline(xintercept=0, size=0.5,lty=2) +
-  xlim(-15,5) +
+  #xlim(-15,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Milling to traveling") +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=pnw_palette("Bay",n=2))
 
-#by encounter
-ggplot(mill.travel_calls, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
-  geom_density_ridges(alpha=0.8) +
+
+##try ridgeline-shouldn't remove call types with n=2 or 3
+#requires height
+ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+  geom_ridgeline(scale=2,alpha=0.8) +
   theme_ridges(grid=F) +
+  #theme(legend.position = "none") +
   geom_vline(xintercept=0, size=0.5,lty=2) +
-  xlim(-15,5) +
+  #xlim(-15,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Milling to traveling") +
-  scale_fill_manual(values=pnw_palette("Bay",n=3))
+  scale_fill_manual(values=pnw_palette("Bay",n=2))
+
+
 
 
 
 #create new dataframe for traveling to milling change
-# travel.mill_calls <- behav_calls %>%
+# travel.mill_ridge <- behav_calls %>%
 #   dplyr::select(time,encounter,minute,behavior,call_type,call_category,difftime_s,difftime_next) %>%
 #   mutate(t_index=case_when(behavior=='Travel'~difftime_next,
 #                            behavior=='Mill'~difftime_s)) %>%
@@ -520,10 +477,11 @@ ggplot(mill.travel_calls, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
 #          call_category=as.factor(call_category))
 
 #code not working with multiple transitions within one encounter, will manually edit
-#write_csv(travel.mill_calls,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_calls.csv")
+#write_csv(travel.mill_ridge,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_ridge.csv")
+#removed encounter 4 because it only has mill to travel transition
 
 #read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
-travel.mill_calls <- read_csv("travel.mill_calls.csv") %>% 
+travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>% 
   mutate(time = hms(time),
          minute=as.factor(minute),
          encounter = as.factor(encounter),
@@ -531,14 +489,15 @@ travel.mill_calls <- read_csv("travel.mill_calls.csv") %>%
          call_type=as.factor(call_type),
          call_category=as.factor(call_category))  %>% 
   na.omit() %>% 
-  #remove calls types that only occur once and have no pattern
-  filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d",
-                          "pulse.mod","c.13","aws.seg")) %>% 
   group_by(encounter)
+  # #remove calls types that only occur once and have no pattern
+  # filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d",
+  #                         "pulse.mod","c.13","aws.seg")) 
+
 
 
 ###Ridge plot- milling to traveling
-ggplot(travel.mill_calls,aes(x=t_index,y=call_type, fill=call_type)) +
+ggplot(travel.mill_ridge,aes(x=t_index,y=call_type, fill=call_type)) +
   geom_density_ridges(alpha=0.8) +
   theme_ridges(grid=F) +
   theme(legend.position = "none") +
@@ -550,7 +509,7 @@ ggplot(travel.mill_calls,aes(x=t_index,y=call_type, fill=call_type)) +
 
 #reordered and colored by call category
 pal <- c("gold2","darkseagreen","cyan4")
-ggplot(travel.mill_calls, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
+ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
   geom_density_ridges(scale=2,alpha=0.8) +
   theme_ridges(grid=F) +
   theme(legend.position = "none") +
@@ -561,11 +520,11 @@ ggplot(travel.mill_calls, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   scale_fill_manual(values=pal)
 
 #by encounter
-ggplot(travel.mill_calls, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.8) +
   theme_ridges(grid=F) +
   geom_vline(xintercept=0, size=0.5,lty=2) +
   xlim(-15,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=pnw_palette("Bay",n=2))

@@ -358,6 +358,7 @@ glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence +
                   data=callrate_total)
 
 summary(glmm.nb)
+plot(parameters(glmm.nb))
 
 #check overdispersion parameter manually (X2/df.resid)
 sum(residuals(glmm.nb,type="pearson")^2)/1045 
