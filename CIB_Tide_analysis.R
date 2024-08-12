@@ -36,6 +36,81 @@ ggplot(data=tide_total %>% filter(date=="2022-08-08")) +
   scale_x_time() 
 
 
+###calculate difference between HOBO and NOAA height data
+HOBO <- read.csv("HOBO_14July22_8Sept22.csv") %>% 
+  mutate(date = mdy(date),
+         time = hm(time))
+
+NOAA <- read.csv("NOAA_anc_14July22_8Sept22.csv") %>% 
+  mutate(date = mdy(date),
+         time = hm(time))
+
+#plots of all days NOAA tide
+ggplot(data=NOAA) + 
+  geom_line(aes(x=time,y=water_level_NOAA,group=date))+
+  theme_classic() +
+  labs(x="Time", y="Water level") +
+  scale_x_time() +
+  scale_y_continuous(breaks=seq(-10,40,by=10)) +
+  theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) +
+  facet_wrap(~date)
+
+#filtered by date
+ggplot(data=NOAA %>% filter(date=="2022-07-15")) + 
+  geom_line(aes(x=time,y=water_level_NOAA,group=date))+
+  theme_classic() +
+  labs(x="Time", y="Water level") +
+  scale_y_continuous(breaks=seq(-10,40,by=5)) +
+  scale_x_time()
+
+
+#calculate diff height per day
+NOAA_diffheight <- NOAA %>% 
+  group_by(date) %>% 
+  mutate(max_height=max(water_level_NOAA),
+         min_height=min(water_level_NOAA),
+         diff_height=abs(max_height-min_height)) %>% 
+  dplyr::select(-time,-water_level_NOAA) %>% 
+  distinct(date,max_height,min_height,diff_height)
+
+#plot
+ggplot(data=NOAA_diffheight,aes(x=date,y=diff_height))+
+  geom_bar(stat="identity") +
+  theme_classic() +
+  labs(x="Date", y="Water height (ft)") +
+  scale_x_date(date_breaks="1 week") +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=5)) +
+  theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) 
+
+
+#diff time
+#read in high/low NOAA tide data
+
+NOAA_highlow <- read.csv("NOAA_highlow.csv")
+  
+
+
+
+
+#### calculate time difference between HOBO and NOAA high tides
+high_tides <- read.csv("2022_high tides combined.csv") %>% 
+  mutate(date_hobo = mdy(date_hobo),
+         time_hobo = hm(time_hobo),
+         date_noaa = mdy(date_noaa),
+         time_noaa = hm(time_noaa))
+#plot
+ggplot(data=high_tides,aes(x=diff_time))  +
+  geom_histogram(stat="count") +
+  theme_classic() +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,30,by=5)) +
+  labs(x="Time difference", y="Count") 
+
+
+
+
+
+
+##############model beluga data with tide data
 #load beluga data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
 acoustic_files <- list.files(pattern = "acoustic.csv")
@@ -68,19 +143,6 @@ callrate_total <- data_total %>%
          calf_presence = as.factor(calf_presence),
          tide = as.factor(tide),
          encounter = as.factor(encounter))
-
-#bin by 8 minutes- not working
-# breaks <- seq(0,8,1)
-# 
-# bin_data <- callrate_total %>% 
-#   mutate(bin_durations= cut(time,breaks=breaks)) %>% 
-#   group_by(encounter,time,bin_durations) %>% 
-#   summarise(bin_n_miunte=sum(n_minute))
-# 
-# bin_data2<- callrate_total %>% 
-#   group_by(encounter,time=floor_hms(time,"8minute")) %>% 
-#   summarise(bin_n_minute=sum(n_minute))
-
 
 
 #read in 2022 HOBO data for 7 days of beluga data
