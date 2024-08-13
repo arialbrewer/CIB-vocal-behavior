@@ -9,6 +9,7 @@ library(performance)
 library(parameters)
 library(see)
 library(DHARMa)
+library(Tides)
 
 
 #HOBO and NOAA tide data for 7 days of 2022 CIB data
@@ -37,62 +38,62 @@ ggplot(data=tide_total %>% filter(date=="2022-08-08")) +
 
 
 ###calculate difference between HOBO and NOAA height data
-HOBO <- read.csv("HOBO_14July22_8Sept22.csv") %>% 
-  mutate(date = mdy(date),
-         time = hm(time))
+# HOBO <- read.csv("HOBO_14July22_8Sept22.csv") %>%
+#   mutate(date = mdy(date),
+#          time = hm(time))
+# 
+# NOAA <- read.csv("NOAA_anc_14July22_8Sept22.csv") %>%
+#   mutate(date = mdy(date),
+#          time = hm(time))
 
-NOAA <- read.csv("NOAA_anc_14July22_8Sept22.csv") %>% 
-  mutate(date = mdy(date),
-         time = hm(time))
+# #plots of all days NOAA tide
+# ggplot(data=NOAA) + 
+#   geom_line(aes(x=time,y=water_level_NOAA,group=date))+
+#   theme_classic() +
+#   labs(x="Time", y="Water level") +
+#   scale_x_time() +
+#   scale_y_continuous(breaks=seq(-10,40,by=10)) +
+#   theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) +
+#   facet_wrap(~date)
+# 
+# #filtered by date
+# ggplot(data=NOAA %>% filter(date=="2022-07-15")) + 
+#   geom_line(aes(x=time,y=water_level_NOAA,group=date))+
+#   theme_classic() +
+#   labs(x="Time", y="Water level") +
+#   scale_y_continuous(breaks=seq(-10,40,by=5)) +
+#   scale_x_time()
 
-#plots of all days NOAA tide
-ggplot(data=NOAA) + 
-  geom_line(aes(x=time,y=water_level_NOAA,group=date))+
-  theme_classic() +
-  labs(x="Time", y="Water level") +
-  scale_x_time() +
-  scale_y_continuous(breaks=seq(-10,40,by=10)) +
-  theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) +
-  facet_wrap(~date)
-
-#filtered by date
-ggplot(data=NOAA %>% filter(date=="2022-07-15")) + 
-  geom_line(aes(x=time,y=water_level_NOAA,group=date))+
-  theme_classic() +
-  labs(x="Time", y="Water level") +
-  scale_y_continuous(breaks=seq(-10,40,by=5)) +
-  scale_x_time()
-
-
-#calculate diff height per day
-NOAA_diffheight <- NOAA %>% 
-  group_by(date) %>% 
-  mutate(max_height=max(water_level_NOAA),
-         min_height=min(water_level_NOAA),
-         diff_height=abs(max_height-min_height)) %>% 
-  dplyr::select(-time,-water_level_NOAA) %>% 
-  distinct(date,max_height,min_height,diff_height)
-
-#plot
-ggplot(data=NOAA_diffheight,aes(x=date,y=diff_height))+
-  geom_bar(stat="identity") +
-  theme_classic() +
-  labs(x="Date", y="Water height (ft)") +
-  scale_x_date(date_breaks="1 week") +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=5)) +
-  theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) 
+###calculate diff height per day
+# NOAA_diffheight <- NOAA %>% 
+#   group_by(date) %>% 
+#   mutate(max_height=max(water_level_NOAA),
+#          min_height=min(water_level_NOAA),
+#          diff_height=abs(max_height-min_height)) %>% 
+#   dplyr::select(-time,-water_level_NOAA) %>% 
+#   distinct(date,max_height,min_height,diff_height)
+# 
+# #plot
+# ggplot(data=NOAA_diffheight,aes(x=date,y=diff_height))+
+#   geom_bar(stat="identity") +
+#   theme_classic() +
+#   labs(x="Date", y="Water height (ft)") +
+#   scale_x_date(date_breaks="1 week") +
+#   scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=5)) +
+#   theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) 
 
 
-#diff time
+### calculate time difference between high and low NOAA data
 #read in high/low NOAA tide data
-
 NOAA_highlow <- read.csv("NOAA_highlow.csv")
   
 
 
 
 
-#### calculate time difference between HOBO and NOAA high tides
+
+
+### calculate time difference between HOBO and NOAA high tides
 high_tides <- read.csv("2022_high tides combined.csv") %>% 
   mutate(date_hobo = mdy(date_hobo),
          time_hobo = hm(time_hobo),
@@ -103,7 +104,9 @@ ggplot(data=high_tides,aes(x=diff_time))  +
   geom_histogram(stat="count") +
   theme_classic() +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,30,by=5)) +
-  labs(x="Time difference", y="Count") 
+  labs(x="Time difference", y="Count") +
+  ggtitle("Time difference between NOAA and HOBO high tides") +
+  theme(plot.title=element_text(hjust=0.5)) 
 
 
 
