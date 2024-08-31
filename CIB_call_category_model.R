@@ -14,6 +14,7 @@ library(gratia)
 library(MASS)
 library(lme4)
 library(DHARMa)
+library(MuMIn)
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -245,7 +246,7 @@ all(callcat_total$call_category2 %in% c(0L, 1L, 2L))
 
 ##K=number of levels of response-1. Because there we have K=2, we repeat the formula twice within a list
 
-#model selection 
+#manual model selection 
 mn0 <- gam(list(call_category2 ~ s(encounter,bs="re"),
                                ~ s(encounter,bs="re")),
            data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")

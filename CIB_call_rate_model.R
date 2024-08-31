@@ -13,6 +13,7 @@ library(parameters)
 library(see)
 library(patchwork)
 library(DHARMa)
+library(MuMIn)
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -343,6 +344,9 @@ check_overdispersion(glmm.pois) #over-dispersed
 #check zero-inflation with performance package
 check_zeroinflation(glmm.pois)  #zero-inflation
 
+#check zero-inflation with dharma package
+testZeroInflation(glmm.pois)
+
 #check residuals
 simulateResiduals(fittedModel = glmm.pois, plot = T)
 
@@ -355,7 +359,7 @@ pchisq(X2, df,lower.tail = FALSE)
 
 ##Fit negative binomial since poisson model is over-dispersed and zero-inflated:
 glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-                  data=callrate_total)
+                  data=callrate_total,na.action="na.fail")
 
 summary(glmm.nb)
 plot(parameters(glmm.nb))
@@ -366,14 +370,17 @@ sum(residuals(glmm.nb,type="pearson")^2)/1045
 #check overdispersion with performance package
 check_overdispersion(glmm.nb)  #no over-dispersion
 
-#check zero-inflation
+#check zero-inflation with performance package
 check_zeroinflation(glmm.nb)   #no zero-inflation
 
 #check residuals- better with nb
 simulateResiduals(fittedModel = glmm.nb, plot = T)
 
+###model selection via dredge
+dredge(glmm.nb)
 
-####model selection for fixed effects
+
+####manual model selection for fixed effects
 glmm.nb0<-glmer.nb(n_minute ~ offset(log(group_size)) + (1|encounter),
                    data=callrate_total)
 
