@@ -472,17 +472,20 @@ plot(callcat_total$encounter, E, xlab="Encounter", ylab="Residuals")
 
 ######################################
 #remove cc to test binomial with ws and pc
-# call_cat_binom <- callcat_total %>% 
+# callcat_binom <- callcat_total %>%
 #   filter(call_category %in% c("ws","pc"))
-
-#still has cc listed
-#levels(call_cat_binom$call_category)
+# 
+# callcat_binom <- callcat_total %>%
+#   filter(call_category == c("ws","pc"))
+# 
+# #still has cc listed
+# levels(call_cat_binom$call_category)
 
 #save csv without cc
 #write_csv(call_cat_binom,"C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/call_cat_binom.csv")
 
 #read in data with just ws and pc
-call_cat_binom <- read.csv("call_cat_binom.csv") %>% 
+callcat_binom <- read.csv("call_cat_binom.csv") %>% 
     mutate(behavior=as.factor(behavior),
            calf_presence=as.factor(calf_presence),
            tide=as.factor(tide),
@@ -490,26 +493,26 @@ call_cat_binom <- read.csv("call_cat_binom.csv") %>%
            group_size=as.integer(group_size),
            call_category=as.factor(call_category))
 
-levels(call_cat_binom$call_category)
+levels(callcat_binom$call_category)
 
 #relevel so ws is reference
-call_cat_binom$call_category <- relevel(call_cat_binom$call_category,ref = "ws")
+callcat_binom$call_category <- relevel(callcat_binom$call_category,ref = "ws")
 #check levels
-levels(call_cat_binom$call_category)
+levels(callcat_binom$call_category)
 
 #call_cat_binom$call_category2 <- as.numeric(call_cat_binom$call_category)-1
 #all(call_cat_binom$call_category2 %in% c(0L, 1L))
 
 #binomial model with gam function
 binom_model <- gam(call_category ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re"),
-                   data = call_cat_binom,
+                   data = callcat_binom,
                    family = binomial(link="logit"))
 
 summary(binom_model)
 
 #or binomial model with glmm function
 binom_model2 <- glmer(call_category ~ behavior + group_size + calf_presence + tide + (1|encounter),
-                      data=call_cat_binom,
+                      data=callcat_binom,
                       family="binomial")
 
 summary(binom_model2)
@@ -520,56 +523,56 @@ summary(binom_model2)
 
 #model selection
 binom0 <- glmer(call_category ~ (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom1 <- glmer(call_category ~ behavior + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom2 <- glmer(call_category ~ behavior + calf_presence + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom3 <- glmer(call_category ~ behavior + calf_presence + group_size + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom4 <- glmer(call_category ~ behavior + calf_presence + group_size + tide + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom5 <- glmer(call_category ~ calf_presence + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom6 <- glmer(call_category ~ calf_presence + group_size + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom7 <- glmer(call_category ~ calf_presence + group_size + tide + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom8 <- glmer(call_category ~ calf_presence + tide + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom9 <- glmer(call_category ~ group_size + (1|encounter),
-           data = call_cat_binom, family="binomial")
+           data = callcat_binom, family="binomial")
 
 binom10 <- glmer(call_category ~ group_size + tide + (1|encounter),
-            data = call_cat_binom, family="binomial")
+            data = callcat_binom, family="binomial")
 
 binom11 <- glmer(call_category ~ group_size + behavior + (1|encounter),
-            data = call_cat_binom, family="binomial")
+            data = callcat_binom, family="binomial")
 
 binom12 <- glmer(call_category ~ group_size + behavior + tide + (1|encounter),
-            data = call_cat_binom, family="binomial")
+            data = callcat_binom, family="binomial")
 
 binom13 <- glmer(call_category ~ tide + (1|encounter),
-            data = call_cat_binom, family="binomial")
+            data = callcat_binom, family="binomial")
 
 binom14 <- glmer(call_category ~ tide + behavior + (1|encounter),
-            data = call_cat_binom, family="binomial")
+            data = callcat_binom, family="binomial")
 
 binom15 <- glmer(call_category ~ tide + behavior + calf_presence + (1|encounter),
-            data = call_cat_binom, family="binomial")
+            data = callcat_binom, family="binomial")
 
 #model selection
 AIC(binom0,binom1,binom2,binom3,binom4,binom5,binom6,binom7,binom8,binom9,binom10,binom11,binom12,binom13,binom14,binom15)  
-#binom2 best modekl (with behavior, calf and encounter)
+#binom2 best model (with behavior, calf and encounter)
 
 summary(binom2)
 
@@ -589,16 +592,15 @@ plot(parameters(binom2))
 confint(binom2, level=0.95)
 
 
-
 ###examining residuals
 E <- residuals(binom2)
 
 #behavior
-plot(call_cat_binom$behavior, E, xlab="Behavior", ylab="Residuals")
+plot(callcat_binom$behavior, E, xlab="Behavior", ylab="Residuals")
 
 #calf presence
-plot(call_cat_binom$calf_presence, E, xlab="Calf presence", ylab="Residuals")
+plot(callcat_binom$calf_presence, E, xlab="Calf presence", ylab="Residuals")
 
 #encounter
-plot(call_cat_binom$encounter, E, xlab="Encounter", ylab="Residuals")
+plot(callcat_binom$encounter, E, xlab="Encounter", ylab="Residuals")
 
