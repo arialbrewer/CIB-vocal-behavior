@@ -134,7 +134,7 @@ mill.travel <- read_csv("mill.travel_type.csv") %>%
   pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws",
                         "pulse.a","uws","modws.seg","pulse.n","nws","c.13","nws.seq","modws.m",
                         "c.9","trill","rws","pulse.mod.seg","c.10","c.12",
-                        "flatws.seg","pulse.flat.seg.2","pulse.mod","pulse.mod.bc","aws.seg"), 
+                        "flatws.seg","pulse.flat.seg.2","pulse.mod","pulse.mod.bc"), 
                names_to = "call_type", values_to = "num_calls") %>% 
   mutate(date = mdy(date),
          minute=as.factor(minute),
@@ -173,8 +173,10 @@ mill.travel <- read_csv("mill.travel_type.csv") %>%
 #   scale_fill_manual(values=pnw_palette("Bay",n=3)) +
 #   facet_wrap(~call_type)
 
-#Line plot
-ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=encounter)) + 
+#Line plot 
+pal1 <- c("firebrick3")
+mill.travel %>% filter(encounter %in% c(4)) %>% 
+ggplot(aes(x=t_index,y=num_calls,group=encounter,color=encounter)) + 
   geom_line(linewidth=1) +
   theme_classic() +
   geom_vline(xintercept=0, size=0.5,lty=2) +
@@ -183,9 +185,8 @@ ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=encount
   xlim(-15,5) +
   ggtitle("Milling to traveling") +
   theme(plot.title=element_text(hjust=0.5)) +
-  scale_color_manual(values=pnw_palette("Bay",n=2)) +
+  scale_color_manual(values=pal1) +
   facet_wrap(~call_type)
-
 
 ##faceted by encounter
 #bar plot
@@ -220,8 +221,8 @@ ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=encount
 
 #read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
 travel.mill <- read_csv("travel.mill_type.csv") %>% 
-  pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","pulse.a","uws","pulse.mod","pulse.n","nws","c.13","aws.seg","c.12",
-                        "c.10","c.9","flatws.seg","modws","modws.m","modws.seg","nws.seq","pulse.flat.seg.2","pulse.mod.bc","pulse.mod.seg","rws","trill"), 
+  pivot_longer(cols = c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d",
+                        "uws","pulse.mod","aws.seg","flatws.seg","modws","modws.seg"),
                names_to = "call_type", values_to = "num_calls") %>% 
   mutate(date = mdy(date),
          minute=as.factor(minute),
@@ -414,9 +415,10 @@ mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>%
          call_category=as.factor(call_category)) %>% 
   na.omit() %>%
   #keep call types n>2
-  filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a","uws",
-    "modws.seg","pulse.n","nws","c.13","nws.seq","modws.m","c.9","trill","rws","pulse.mod.seg","c.10"))
-
+  filter(call_type %in% c("aws","c.10","c.13","c.9","dws","flatws","flatws.seg","modws","modws.m",
+                          "modws.seg","nws","nws.seq","pulse.a","pulse.d","pulse.flat","pulse.flat.seg",
+                          "pulse.mod","pulse.mod.seg","pulse.n","rws","trill","uws"))
+                      
 
 ###Ridge plot- milling to traveling
 #by call category
@@ -432,7 +434,7 @@ ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   scale_fill_manual(values=pal)
 
 #by encounter
-pal2 <- c("firebrick3")
+pal1 <- c("firebrick3")
 ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
@@ -441,7 +443,7 @@ ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   xlim(-15,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Milling to traveling") +
-  scale_fill_manual(values=pal2)
+  scale_fill_manual(values=pal1)
 
 #ridgeline- doesn't remove call types with n=2 or 3
 #requires height
@@ -479,14 +481,15 @@ travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>%
          call_category=as.factor(call_category))  %>% 
   na.omit() %>% 
   group_by(encounter) %>% 
-  #keep call types n>1
-  filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","modws",
-                        "flatws.seg","pulse.mod","aws.seg"))
+  #keep call types n>2
+  filter(call_type %in% c("aws","aws.seg","dws","flatws","flatws.seg","modws",
+                          "pulse.flat","pulse.flat.seg","pulse.mod"))
+
 
 
 ###Ridge plot- milling to traveling
 #by call category
-pal <- c("gold2","darkseagreen","cyan4")
+pal3 <- c("gold2","darkseagreen","cyan4")
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
@@ -494,10 +497,10 @@ ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   xlim(-15,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=pal3)
 
 #by encounter
-pal3 <- c("cyan4","firebrick3")
+pal2 <- c("cyan4","firebrick3")
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
@@ -505,7 +508,7 @@ ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   xlim(-15,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
-  scale_fill_manual(values=pal3)
+  scale_fill_manual(values=pal2)
 
 
 #ridgeline- doesn't remove call types with n=2 or 3
