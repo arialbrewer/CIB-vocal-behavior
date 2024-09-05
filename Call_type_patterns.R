@@ -109,7 +109,7 @@ behav <- read_csv("behav_tran_type.csv")
 
 
 
-###create new dataframe for milling to traveling change
+###create new dataframe for MILLING TO TRAVELING change
 # mill.travel <- behav %>%
 #   dplyr::select(date,minute,encounter,behavior,difftime_s,difftime_next,pulse.flat, flatws,aws,dws,pulse.flat.seg, pulse.d,
 #                 modws,pulse.a,uws,modws.seg,flatws.seg,pulse.mod,pulse.n,nws,c.13,nws.seq,modws.m,c.9,aws.seg,trill,rws,pulse.mod.seg,
@@ -203,7 +203,7 @@ ggplot(data=mill.travel, aes(x=t_index,y=num_calls,group=encounter,color=encount
 
 
 
-###create new dataframe for traveling to milling change 
+###create new dataframe for TRAVELING TO MILLING change 
 # travel.mill <- behav %>%
 #   dplyr::select(date,minute,encounter,behavior,difftime_s,difftime_next,pulse.flat, flatws,aws,dws,pulse.flat.seg, pulse.d,modws,pulse.a,
 #                 uws,modws.seg,flatws.seg,pulse.mod,pulse.n,nws,c.13,nws.seq,modws.m,c.9,aws.seg,trill,rws,pulse.mod.seg,
@@ -272,8 +272,6 @@ ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=encount
   theme(plot.title=element_text(hjust=0.5)) +
   scale_color_manual(values=pnw_palette("Bay",n=2)) +
   facet_wrap(~call_type)
-
-
 
 
 
@@ -375,7 +373,7 @@ ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_type)) +
 
 
 
-########### Ridge plots
+########################################## Ridge plots
 ## New data format for behavior ridge plots, data above has calls organized in counts per minute, ridge wants one call per row
 # behav_tran_type_long <- data_total %>%
 #   filter(encounter %in% c(3,4,7)) %>% 
@@ -394,7 +392,6 @@ ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_type)) +
 #read in updated data
 #behav_ridge <- read_csv("behav_tran_type_long.csv")
 
-
 #create new dataframe for milling to traveling change
 # mill.travel_ridge <- behav_ridge %>%
 #   dplyr::select(date,time,encounter,minute,behavior,call_type,call_category,difftime_s,difftime_next) %>%
@@ -406,7 +403,7 @@ ggplot(data=nocalf.calf, aes(x=t_index,y=num_calls,fill=call_type)) +
 #write_csv(mill.travel_ridge,"C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/mill.travel_ridge.csv")
 #removed encounter 7 because it only has travel to mill transition and first travel of enc 3
 
-#read in updated data
+#read in updated MILL TO TRAVEL data
 mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>% 
   mutate(date = mdy(date),
          time = hms(time),
@@ -416,24 +413,12 @@ mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>%
          call_type=as.factor(call_type),
          call_category=as.factor(call_category)) %>% 
   na.omit() %>%
-  #keep call types n>1
+  #keep call types n>2
   filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a","uws",
-    "modws.seg","flatws.seg","pulse.mod","pulse.n","nws","c.13","nws.seq","modws.m","c.9","aws.seg","trill",
-    "rws","pulse.mod.seg","c.10","pulse.mod.bc","pulse.flat.seg.2","c.12"))
+    "modws.seg","pulse.n","nws","c.13","nws.seq","modws.m","c.9","trill","rws","pulse.mod.seg","c.10"))
 
 
 ###Ridge plot- milling to traveling
-#by call type
-ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_type)) +
-  geom_density_ridges(alpha=0.8) +
-  theme_ridges(grid=F) +
-  theme(legend.position = "none") +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  xlim(-15,5) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Milling to traveling") +
-  scale_fill_manual(values=pnw_palette("Bay",n=23))
-
 #by call category
 pal <- c("gold2","darkseagreen","cyan4")
 ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
@@ -484,7 +469,7 @@ ggplot(mill.travel, aes(x=t_index,y=reorder(call_type,desc(t_index)),height=num_
 #write_csv(travel.mill_ridge,"C:/Users/Arial/OneDrive - UW/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/travel.mill_ridge.csv")
 #removed encounter 4 because it only has mill to travel transition
 
-#read in updated data, remove call types with no pattern and change remaining call types from wider to longer format
+#read in updated TRAVEL TO MILL data, remove call types with no pattern and change remaining call types from wider to longer format
 travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>% 
   mutate(time = hms(time),
          minute=as.factor(minute),
@@ -495,23 +480,11 @@ travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>%
   na.omit() %>% 
   group_by(encounter) %>% 
   #keep call types n>1
-  filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","pulse.d","modws","pulse.a","uws",
-                        "modws.seg","flatws.seg","pulse.mod","pulse.n","nws","c.13","nws.seq","modws.m","c.9","aws.seg","trill",
-                        "rws","pulse.mod.seg","c.10","pulse.mod.bc","pulse.flat.seg.2","c.12"))
+  filter(call_type %in% c("pulse.flat","flatws","aws","dws","pulse.flat.seg","modws",
+                        "flatws.seg","pulse.mod","aws.seg"))
 
 
 ###Ridge plot- milling to traveling
-#by call type
-ggplot(travel.mill_ridge,aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_type)) +
-  geom_density_ridges(alpha=0.8) +
-  theme_ridges(grid=F) +
-  theme(legend.position = "none") +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  xlim(-15,5) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Traveling to milling") +
-  scale_fill_manual(values=pnw_palette("Bay",n=13)) 
-
 #by call category
 pal <- c("gold2","darkseagreen","cyan4")
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
