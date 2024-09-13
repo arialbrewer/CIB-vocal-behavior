@@ -36,7 +36,7 @@ library(DHARMa)
 #   scale_x_time() 
 
 
-###HOBO data
+###HOBO data (all)
 HOBO <- read.csv("HOBO_14July22_8Sept22.csv") %>%
   mutate(date = mdy(date),
          time = hm(time))
@@ -60,7 +60,7 @@ ggplot(data=HOBO %>% filter(date=="2022-07-15")) +
   scale_x_time()
 
 
-###NOAA data
+###NOAA data (all)
 NOAA <- read.csv("NOAA_anc_14July22_8Sept22.csv") %>%
   mutate(date = mdy(date),
          time = hm(time))
@@ -84,26 +84,42 @@ ggplot(data=NOAA %>% filter(date=="2022-07-15")) +
   scale_x_time()
 
 
-###calculate diff height per day
-# NOAA_diffheight <- NOAA %>% 
-#   group_by(date) %>% 
-#   mutate(max_height=max(water_level_NOAA),
-#          min_height=min(water_level_NOAA),
-#          diff_height=abs(max_height-min_height)) %>% 
-#   dplyr::select(-time,-water_level_NOAA) %>% 
-#   distinct(date,max_height,min_height,diff_height)
-# 
-# #plot
-# ggplot(data=NOAA_diffheight,aes(x=date,y=diff_height))+
-#   geom_bar(stat="identity") +
-#   theme_classic() +
-#   labs(x="Date", y="Water height (ft)") +
-#   scale_x_date(date_breaks="1 week") +
-#   scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=5)) +
-#   theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) 
+###NOAA data-2021 days with CIB data
+NOAA_2021 <- read.csv("2021_NOAA_CIB days.csv") %>%
+  mutate(date = mdy(date),
+         time = hm(time))
+
+#plots
+ggplot(data=NOAA_2021) +
+  geom_line(aes(x=time,y=tide,group=date))+
+  theme_classic() +
+  labs(x="Time", y="Water level") +
+  scale_x_time() +
+  scale_y_continuous(breaks=seq(-10,40,by=10)) +
+  theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) +
+  facet_wrap(~date)
+
+###NOAA data-2022 days with CIB data
+NOAA_2022 <- read.csv("2022_NOAA_CIB days.csv") %>%
+  mutate(date = as.Date(date),
+         time = as.POSIXct(time))
+  
+  mutate(date = mdy(date),
+         time = hm(time))
+
+#plots
+ggplot(data=NOAA_2022) +
+  geom_line(aes(x=time,y=tide,group=date))+
+  theme_classic() +
+  labs(x="Time", y="Water level") +
+  scale_x_time(date_minor_breaks = "1 hour") +
+  scale_y_continuous(breaks=seq(-10,40,by=10)) +
+  theme(axis.text.x=element_text(angle=45,size=8,hjust=1)) +
+  facet_wrap(~date)
 
 
-###calculate time difference between high and low NOAA data
+
+########calculate time difference between high and low NOAA data
 #read in high-low NOAA tide data
 NOAA_highlow <- read.csv("2022_NOAA_high low.csv") %>% 
   mutate(date = mdy(date),
@@ -139,7 +155,27 @@ ggplot(data=high_tides,aes(x=diff_time))  +
   ggtitle("Time difference between NOAA and HOBO high tides") +
   theme(plot.title=element_text(hjust=0.5)) 
 
+mean(high_tides$diff_level)
 
+
+
+###calculate time difference between HOBO and NOAA low tides
+low_tides <- read.csv("2022_low tides combined.csv") %>% 
+  mutate(date_hobo = mdy(date_hobo),
+         time_hobo = hm(time_hobo),
+         date_noaa = mdy(date_noaa),
+         time_noaa = hm(time_noaa))
+
+#plot
+ggplot(data=low_tides,aes(x=diff_time))  +
+  geom_histogram(stat="count") +
+  theme_classic() +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,5,by=1)) +
+  labs(x="Time difference", y="Count") +
+  ggtitle("Time difference between NOAA and HOBO low tides") +
+  theme(plot.title=element_text(hjust=0.5)) 
+
+mean(low_tides$diff_level)
 
 
 
