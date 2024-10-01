@@ -590,14 +590,24 @@ library(DHARMa)
 
 
 ####data with call rates total
-##mill to travel
+
+####mill to travel
+#histogram
+ggplot(data=mill.travel, aes(x=num_calls)) +
+  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
+  theme_classic() +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
+  labs(x="Total call rate (#calls/minute)",y="Count") 
+
+#poisson model
 m.t_model <- glmer(num_calls ~ t_index + (1|encounter), family=poisson(link="log"), data=mill.travel)
 
 summary(m.t_model)
 check_overdispersion(m.t_model)
 check_zeroinflation(m.t_model)
 
-#negative binomial
+#negative binomial model
 m.t_nb <-glmer.nb(num_calls ~ t_index + (1|encounter), data=mill.travel)
 
 summary(m.t_nb)
@@ -608,14 +618,23 @@ check_zeroinflation(m.t_nb)
 simulateResiduals(fittedModel = m.t_nb, plot = T)
 
 
-##travel to mill
+####travel to mill
+#histogram
+ggplot(data=travel.mill, aes(x=num_calls)) +
+  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
+  theme_classic() +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
+  labs(x="Total call rate (#calls/minute)",y="Count") 
+
+#poisson model
 t.m_model <- glmer(num_calls ~ t_index + (1|encounter), family=poisson(link="log"), data=travel.mill)
 
 summary(t.m_model)
 check_overdispersion(t.m_model)
 check_zeroinflation(t.m_model)
 
-#negative binomial
+#negative binomial model
 t.m_nb <-glmer.nb(num_calls ~ t_index + (1|encounter), data=travel.mill)
 
 summary(t.m_nb)

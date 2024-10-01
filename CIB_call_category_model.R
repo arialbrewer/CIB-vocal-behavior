@@ -428,64 +428,11 @@ plot(callcat_total$encounter, E, xlab="Encounter", ylab="Residuals")
 # boxplot(preds, type="response")
 
 
-# ###Sarah recommends this way
-# #set up new prediction dataframe
-# newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50),tide=c("ebb","flood"))
-# 
-# #number of bootstrap samples and set up to store the results 
-# boot.samps <- 500 
-# pv <- matrix(NA,nrow=boot.samps,ncol=nrow(newData))
-# #simulate from the model, update the model with new predictor 
-# for(j in 1:boot.samps){
-#   y <- unlist(simulate(glmm.nb2))
-#   b.mod <- update(glmm.nb2,y ~ .)
-#   #then predict from the updated model if the bootstrap sample converged 
-#   if(is.null(summary(b.mod)$optinfo$conv$lme4$messages)==TRUE){
-#     RE.sd <- as.data.frame(VarCorr(b.mod))$sdcor[1]
-#     pv[j,] <- (1/(1+exp(-predict(b.mod, re.form = ~0, newData) + rnorm(1,0,sd=RE.sd))))
-#   }
-# }
-# pv.mean <- apply(pv,2,function(x)mean(x,na.rm=TRUE))
-# pv.lowr <- apply(pv,2,function(x)quantile(x,p=0.025,na.rm=TRUE))
-# pv.uppr <- apply(pv,2,function(x)quantile(x,p=0.975,na.rm=TRUE))
-# 
-# 
-# 
-# #Plot predictions 
-# all.plot <- data.frame(newData[c(1:3),],pv.mean[c(1:3)],pv.lowr[c(1:3)],pv.uppr[c(1:3)],
-#                        newData[c(4:6),],pv.mean[c(4:6)],pv.lowr[c(4:6)],pv.uppr[c(4:6)],
-#                        newData[c(7:9),],pv.mean[c(7:9)],pv.lowr[c(7:9)],pv.uppr[c(7:9)],
-#                        newData[c(10:12),],pv.mean[c(10:12)],pv.lowr[c(10:12)],pv.uppr[c(10:12)],
-#                        newData[c(13:15),],pv.mean[c(13:15)],pv.lowr[c(13:15)],pv.uppr[c(13:15)],
-#                        newData[c(16:18),],pv.mean[c(16:18)],pv.lowr[c(16:18)],pv.uppr[c(16:18)])
-# colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
-#                         "behavior2","calf2","group2","mean2","lwr2","uppr2",
-#                         "behavior3","calf3","group3","mean3","lwr3","uppr3",
-#                         "behavior4","calf4","group4","mean4","lwr4","uppr4",
-#                         "behavior5","calf5","group5","mean5","lwr5","uppr5",
-#                         "behavior6","calf6","group6","mean6","lwr6","uppr6")
 
-
-
-
-
-
-######################################
-#remove cc to test binomial with ws and pc
-# callcat_binom <- callcat_total %>%
-#   filter(call_category %in% c("ws","pc"))
-# 
-# callcat_binom <- callcat_total %>%
-#   filter(call_category == c("ws","pc"))
-# 
-# #still has cc listed
-# levels(call_cat_binom$call_category)
-
-#save csv without cc
-#write_csv(call_cat_binom,"C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/call_cat_binom.csv")
-
+###############################################################################
+###remove cc to test binomial with ws and pc
 #read in data with just ws and pc
-callcat_binom <- read.csv("call_cat_binom.csv") %>% 
+callcat_binom <- read.csv("call_cat_ws_pc.csv") %>% 
     mutate(behavior=as.factor(behavior),
            calf_presence=as.factor(calf_presence),
            tide=as.factor(tide),
@@ -503,25 +450,16 @@ levels(callcat_binom$call_category)
 #call_cat_binom$call_category2 <- as.numeric(call_cat_binom$call_category)-1
 #all(call_cat_binom$call_category2 %in% c(0L, 1L))
 
-#binomial model with gam function
-binom_model <- gam(call_category ~ behavior + group_size + calf_presence + tide + s(encounter,bs="re"),
-                   data = callcat_binom,
-                   family = binomial(link="logit"))
+
+#full binomial model
+binom_model <- glmer(call_category ~ behavior + group_size + calf_presence + tide + (1|encounter),
+                      data=callcat_binom,
+                      family="binomial",na.action="na.fail")
 
 summary(binom_model)
 
-#or binomial model with glmm function
-binom_model2 <- glmer(call_category ~ behavior + group_size + calf_presence + tide + (1|encounter),
-                      data=callcat_binom,
-                      family="binomial")
 
-summary(binom_model2)
-
-#get similar results with both types of models
-
-
-
-#model selection
+#model selection on fixed effects
 binom0 <- glmer(call_category ~ (1|encounter),
            data = callcat_binom, family="binomial")
 
@@ -570,23 +508,24 @@ binom14 <- glmer(call_category ~ tide + behavior + (1|encounter),
 binom15 <- glmer(call_category ~ tide + behavior + calf_presence + (1|encounter),
             data = callcat_binom, family="binomial")
 
-#model selection
+
 AIC(binom0,binom1,binom2,binom3,binom4,binom5,binom6,binom7,binom8,binom9,binom10,binom11,binom12,binom13,binom14,binom15)  
-#binom2 best model (with behavior, calf and encounter)
+#binom2 best model (behavior,calf)
+
+#model selection with dredge
+dredge(binom_model) #same result as AIC (behavior,calf)
 
 summary(binom2)
+plot(parameters(binom2))
 
-#model diagnostics
+#check overdispersion with performance package
 check_overdispersion(binom2)
 
 #check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
-sum(residuals(binom2,type="pearson")^2)/1672
+sum(residuals(binom2,type="pearson")^2)/1672   #not overdispersed
 
 #check residuals
 simulateResiduals(fittedModel = binom2, plot = T)
-
-#plot model parameters (coefficient and CI)
-plot(parameters(binom2))
 
 #95% confidence intervals
 confint(binom2, level=0.95)
@@ -601,6 +540,5 @@ plot(callcat_binom$behavior, E, xlab="Behavior", ylab="Residuals")
 #calf presence
 plot(callcat_binom$calf_presence, E, xlab="Calf presence", ylab="Residuals")
 
-#encounter
-plot(callcat_binom$encounter, E, xlab="Encounter", ylab="Residuals")
+
 

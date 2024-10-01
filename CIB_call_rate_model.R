@@ -326,8 +326,7 @@ var(callrate_total$n_minute)
 test<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
                  family=poisson(link="log"), data=callrate_total)
 
-summary(test)
-#coefficient= 1.1 -can use offset for group size
+summary(test)   #coefficient= 1.1 so we can use offset for group size
 
 #Poisson with offset on group size
 glmm.pois<-glmer(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
@@ -363,12 +362,6 @@ glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence +
 
 summary(glmm.nb)
 plot(parameters(glmm.nb))
-
-#check overdispersion parameter manually (X2/df.resid)
-sum(residuals(glmm.nb,type="pearson")^2)/1045 
-
-#check overdispersion with performance package
-check_overdispersion(glmm.nb)  #no over-dispersion
 
 #check zero-inflation with performance package
 check_zeroinflation(glmm.nb)   #no zero-inflation
@@ -408,7 +401,8 @@ glmm.nb7<-glmer.nb(n_minute ~ offset(log(group_size)) + tide + (1|encounter),
 
 #model selection
 AIC(glmm.nb0,glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4,glmm.nb5,glmm.nb6,glmm.nb7) 
-#nb2 is the best model (model without tide)
+#nb2 is the best model (model without tide)- matches dredge result
+
 
 #model summary
 summary(glmm.nb2) 
@@ -422,8 +416,6 @@ model_performance(glmm.nb2)
 #check overdispersion parameter manually (X2/df.resid)
 sum(residuals(glmm.nb2,type="pearson")^2)/1046
 
-#with performance package
-check_overdispersion(glmm.nb2)
 
 #another way manually (null=there is no over-dispersion)
 overdisp_fun <- function(model) {
@@ -485,54 +477,145 @@ check_model(glmm.nb2)
 
 
 
+
+#########################################################################
+#Sarah recommends running a hurdle model instead of glmm.nb bc zero-inflation is still an issue
+###glmmTMB
+library(glmmTMB)
+library(bbmle) #for AICtab
+
+## sarah says build truncated_poisson first then if still zero-inflated use truncated_nbinom
+##can I use offset with hurdle model????
+#without offset
+test<-glmmTMB(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
+             ziformula= ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
+             family=truncated_poisson, data=callrate_total)
+
+summary(test)
+
+#not using offset
+hur.pois<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
+                  ziformula= ~ behavior + group_size + calf_presence + tide + (1|encounter),
+                  family=truncated_poisson, data=callrate_total)
+
+summary(hur.pois)
+plot(parameters(hur.pois))
+
+#check overdispersion with performance package
+check_overdispersion(hur.pois)
+
+#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
+sum(residuals(hur.pois,type="pearson")^2)/1039 #not overdispersed = 1.0
+
+#check zero-inflation with performance package
+check_zeroinflation(hur.pois)
+
+#check residuals
+simulateResiduals(fittedModel = hur.pois, plot = T)
+
+#Chi2 Goodness of fit test (null hypothesis= model is correctly specified)  
+X2 <- sum((callrate_total$n_minute - fitted(hur.pois))^2 / fitted(hur.pois))
+df <- length(callrate_total$n_minute)-length(coef(hur.pois))
+pchisq(X2, df,lower.tail = FALSE)
+#reject null- model not a good fit
+
+
+
+
+#negative binomial
+hur.nb<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
+             ziformula= ~ behavior + group_size + calf_presence + tide + (1|encounter),
+             family=truncated_nbinom2, data=callrate_total)
+
+summary(hur.nb)
+plot(parameters(hur.nb))
+
+#check overdispersion with performance package
+check_overdispersion(hur.nb)
+
+#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
+sum(residuals(hur.nb,type="pearson")^2)/1038 # model is not overdispersed
+
+#check zero-inflation with performance package
+check_zeroinflation(hur.nb)
+
+#check residuals
+simulateResiduals(fittedModel = hur.nb, plot = T)
+
+
+
+
+AICtab(hur.pois,hur.nb)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ############ Predictions   
-library(ggeffects)
-#predictions by all variables- condition used since we have an offset on group size
-pred <- predict_response(glmm.nb2,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
-print(pred,collapse_ci=TRUE)
-plot(pred)
+# library(ggeffects)
+# #predictions by all variables- condition used since we have an offset on group size
+# pred <- predict_response(glmm.nb2,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
+# print(pred,collapse_ci=TRUE)
+# plot(pred)
 
 
 ###Sarah recommends this way
 #set up new prediction dataframe
-newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
-
-
-pred <- predict(glmm.nb2,newData,type="response")
-
-
-#number of bootstrap samples and set up to store the results 
-boot.samps <- 500 
-pv <- matrix(NA,nrow=boot.samps,ncol=nrow(newData))
-#simulate from the model, update the model with new predictor 
-for(j in 1:boot.samps){
-  y <- unlist(simulate(glmm.nb2))
-  b.mod <- update(glmm.nb2,y ~ .)
-  #then predict from the updated model if the bootstrap sample converged 
-  if(is.null(summary(b.mod)$optinfo$conv$lme4$messages)==TRUE){
-    RE.sd <- as.data.frame(VarCorr(b.mod))$sdcor[1]
-    pv[j,] <- (1/(1+exp(-predict(b.mod, re.form = ~0, newData) + rnorm(1,0,sd=RE.sd))))
-  }
-}
-pv.mean <- apply(pv,2,function(x)mean(x,na.rm=TRUE))
-pv.lowr <- apply(pv,2,function(x)quantile(x,p=0.025,na.rm=TRUE))
-pv.uppr <- apply(pv,2,function(x)quantile(x,p=0.975,na.rm=TRUE))
-
-
-
-#Plot predictions 
-all.plot <- data.frame(newData[c(1:3),],pv.mean[c(1:3)],pv.lowr[c(1:3)],pv.uppr[c(1:3)],
-                       newData[c(4:6),],pv.mean[c(4:6)],pv.lowr[c(4:6)],pv.uppr[c(4:6)],
-                       newData[c(7:9),],pv.mean[c(7:9)],pv.lowr[c(7:9)],pv.uppr[c(7:9)],
-                       newData[c(10:12),],pv.mean[c(10:12)],pv.lowr[c(10:12)],pv.uppr[c(10:12)],
-                       newData[c(13:15),],pv.mean[c(13:15)],pv.lowr[c(13:15)],pv.uppr[c(13:15)],
-                       newData[c(16:18),],pv.mean[c(16:18)],pv.lowr[c(16:18)],pv.uppr[c(16:18)])
-colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
-                        "behavior2","calf2","group2","mean2","lwr2","uppr2",
-                        "behavior3","calf3","group3","mean3","lwr3","uppr3",
-                        "behavior4","calf4","group4","mean4","lwr4","uppr4",
-                        "behavior5","calf5","group5","mean5","lwr5","uppr5",
-                        "behavior6","calf6","group6","mean6","lwr6","uppr6")
+# newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
+# 
+# 
+# pred <- predict(glmm.nb2,newData,type="response")
+# 
+# 
+# #number of bootstrap samples and set up to store the results 
+# boot.samps <- 500 
+# pv <- matrix(NA,nrow=boot.samps,ncol=nrow(newData))
+# #simulate from the model, update the model with new predictor 
+# for(j in 1:boot.samps){
+#   y <- unlist(simulate(glmm.nb2))
+#   b.mod <- update(glmm.nb2,y ~ .)
+#   #then predict from the updated model if the bootstrap sample converged 
+#   if(is.null(summary(b.mod)$optinfo$conv$lme4$messages)==TRUE){
+#     RE.sd <- as.data.frame(VarCorr(b.mod))$sdcor[1]
+#     pv[j,] <- (1/(1+exp(-predict(b.mod, re.form = ~0, newData) + rnorm(1,0,sd=RE.sd))))
+#   }
+# }
+# pv.mean <- apply(pv,2,function(x)mean(x,na.rm=TRUE))
+# pv.lowr <- apply(pv,2,function(x)quantile(x,p=0.025,na.rm=TRUE))
+# pv.uppr <- apply(pv,2,function(x)quantile(x,p=0.975,na.rm=TRUE))
+# 
+# 
+# 
+# #Plot predictions 
+# all.plot <- data.frame(newData[c(1:3),],pv.mean[c(1:3)],pv.lowr[c(1:3)],pv.uppr[c(1:3)],
+#                        newData[c(4:6),],pv.mean[c(4:6)],pv.lowr[c(4:6)],pv.uppr[c(4:6)],
+#                        newData[c(7:9),],pv.mean[c(7:9)],pv.lowr[c(7:9)],pv.uppr[c(7:9)],
+#                        newData[c(10:12),],pv.mean[c(10:12)],pv.lowr[c(10:12)],pv.uppr[c(10:12)],
+#                        newData[c(13:15),],pv.mean[c(13:15)],pv.lowr[c(13:15)],pv.uppr[c(13:15)],
+#                        newData[c(16:18),],pv.mean[c(16:18)],pv.lowr[c(16:18)],pv.uppr[c(16:18)])
+# colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
+#                         "behavior2","calf2","group2","mean2","lwr2","uppr2",
+#                         "behavior3","calf3","group3","mean3","lwr3","uppr3",
+#                         "behavior4","calf4","group4","mean4","lwr4","uppr4",
+#                         "behavior5","calf5","group5","mean5","lwr5","uppr5",
+#                         "behavior6","calf6","group6","mean6","lwr6","uppr6")
 
 
 
