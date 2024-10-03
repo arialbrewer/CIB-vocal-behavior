@@ -237,8 +237,8 @@ callcat_total %>%
 #default levels are cc,pc,ws
 levels(callcat_total$call_category)
 
-#relevel so ws is level 0 (reference level)
-callcat_total$call_category <- relevel(callcat_total$call_category,ref = "ws")
+#relevel so CC is level 0 (reference level)
+callcat_total$call_category <- relevel(callcat_total$call_category,ref = "cc")
 callcat_total$call_category2 <- as.numeric(callcat_total$call_category)-1
 levels(callcat_total$call_category)
 
@@ -322,6 +322,7 @@ AIC(mn2,mn3,mn4,mn15)
 
 #model summary
 summary(mn4)
+plot(parameters(mn4))
 
 ##calculate 95% CI= (Coef +/- 1.96 * SE).
 #cc for behavior-travel

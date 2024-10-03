@@ -241,6 +241,18 @@ ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=encount
   facet_wrap(~call_type)
 
 
+#Line plot zoomed out
+ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=call_type)) + 
+  geom_line(linewidth=1) +
+  theme_classic() +
+  geom_vline(xintercept=0, size=0.5,lty=2) +
+  labs(x="Time", y="Count",fill="Call type") +
+  scale_y_continuous(expand=c(0,0)) +
+  #xlim(-15,5) +
+  ggtitle("Traveling to milling") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_color_manual(values=pnw_palette("Bay",n=12)) +
+  facet_wrap(~encounter)
 
 
 #################### Ridge plots
@@ -256,59 +268,49 @@ mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>%
          call_type=as.factor(call_type),
          call_category=as.factor(call_category)) %>% 
   na.omit() %>%
-  #keep call types n>2
+  #keep call types n>1
   filter(call_type %in% c("aws","c.10","c.13","c.9","dws","flatws","flatws.seg","modws","modws.m",
                           "modws.seg","nws","nws.seq","pulse.a","pulse.d","pulse.flat","pulse.flat.seg",
                           "pulse.mod","pulse.mod.seg","pulse.n","rws","trill","uws"))
                       
 
-#by call category
-pal3 <- c("gold2","darkseagreen","cyan4")
-ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
-  geom_density_ridges(scale=2,alpha=0.7) +
-  theme_ridges(grid=F) +
-  #theme(legend.position = "none") +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
-  xlim(-15,5) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Milling to traveling") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_fill_manual(values=pal)
-
-#by encounter
-pal1 <- c("cyan4")
-ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
-  geom_density_ridges(stat="density_ridges",alpha=0.7) +
-  theme_ridges(grid=F) +
-  #theme(legend.position = "none") +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
-  xlim(-15,5) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Milling to traveling") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_fill_manual(values=pal1)
-
-#by encounter zoomed out
-ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
-  geom_density_ridges(scale=2,alpha=0.7) +
-  theme_ridges(grid=F) +
-  #theme(legend.position = "none") +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Milling to traveling") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_fill_manual(values=pal1)
-
-#ridgeline- doesn't remove call types with n=2 or 3
-#requires height
-# ggplot(mill.travel, aes(x=t_index,y=reorder(call_type,desc(t_index)),height=num_calls,fill=encounter)) +
-#   geom_ridgeline(scale=0.5,alpha=0.7) +
+#by encounter zoomed in to -15 to 5
+# pal1 <- c("cyan4")
+# ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+#   geom_density_ridges(stat="density_ridges",alpha=0.7) +
 #   theme_ridges(grid=F) +
+#   #theme(legend.position = "none") +
 #   geom_vline(xintercept=0, size=0.7,lty=2) +
 #   xlim(-15,5) +
 #   labs(x="Time", y="Call type") +
 #   ggtitle("Milling to traveling") +
-#   scale_fill_manual(values=pnw_palette("Bay",n=2))
+#   theme(text=element_text(family="serif", size=14)) +
+#   scale_fill_manual(values=pal1)
+
+#density ridge with points
+pal2 <- c("darkseagreen","gold2")
+ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+  geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE, point_alpha=1,point_shape=21) +
+  geom_point(data=subset(mill.travel_ridge, encounter %in% c(3) & call_type %in% c("dws","flatws","c.8")),aes(),shape=21,size=2) +
+  theme_ridges(grid=F) +
+  #theme(legend.position = "none") +
+  geom_vline(xintercept=0, size=0.7,lty=2) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Milling to traveling") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_fill_manual(values=pal2)
+
+
+#ridgeline- doesn't remove call types with n=2 or 3
+#requires height
+ggplot(mill.travel, aes(x=t_index,y=reorder(call_type,desc(t_index)),height=num_calls,fill=encounter)) +
+  geom_ridgeline(scale=0.5,alpha=0.7) +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=0.7,lty=2) +
+  #xlim(-15,5) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Milling to traveling") +
+  scale_fill_manual(values=pnw_palette("Bay",n=2))
 
 
 
@@ -322,39 +324,27 @@ travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>%
          call_category=as.factor(call_category))  %>% 
   na.omit() %>% 
   group_by(encounter) %>% 
-  #keep call types n>2
+  #keep call types n>1
   filter(call_type %in% c("aws","aws.seg","dws","flatws","flatws.seg","modws",
-                          "pulse.flat","pulse.flat.seg","pulse.mod"))
+  "pulse.flat","pulse.flat.seg","pulse.mod"))
 
-
-#by call category
-pal3 <- c("gold2","darkseagreen","cyan4")
-ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
-  geom_density_ridges(scale=2,alpha=0.7) +
-  theme_ridges(grid=F) +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
-  xlim(-15,5) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Traveling to milling") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_fill_manual(values=pal3)
 
 #by encounter
-pal2 <- c("darkseagreen","gold2")
-ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
-  geom_density_ridges(scale=2,alpha=0.7) +
-  theme_ridges(grid=F) +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
-  xlim(-15,5) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Traveling to milling") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_fill_manual(values=pal2)
+# pal2 <- c("darkseagreen","gold2")
+# ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+#   geom_density_ridges(scale=2,alpha=0.7) +
+#   theme_ridges(grid=F) +
+#   geom_vline(xintercept=0, size=0.7,lty=2) +
+#   xlim(-15,5) +
+#   labs(x="Time", y="Call type") +
+#   ggtitle("Traveling to milling") +
+#   theme(text=element_text(family="serif", size=14)) +
+#   scale_fill_manual(values=pal2)
 
-#by encounter zoomed out
-pal2 <- c("darkseagreen","gold2")
+#density ridge with points
+pal2 <- c("gold2","cyan4")
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
-  geom_density_ridges(scale=2,alpha=0.7) +
+  geom_density_ridges(scale=2,alpha=0.7,scale=2,alpha=0.7,jittered_points = TRUE, point_alpha=1,point_shape=21) +
   theme_ridges(grid=F) +
   geom_vline(xintercept=0, size=0.7,lty=2) +
   labs(x="Time", y="Call type") +
@@ -365,87 +355,76 @@ ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
 
 #ridgeline- doesn't remove call types with n=2 or 3
 #requires height
-# ggplot(travel.mill, aes(x=t_index,y=reorder(call_type,desc(t_index)),height=num_calls,fill=encounter)) +
-#   geom_ridgeline(scale=0.5,alpha=0.7) +
-#   theme_ridges(grid=F) +
-#   geom_vline(xintercept=0, size=0.7,lty=2) +
-#   xlim(-15,5) +
-#   labs(x="Time", y="Call type") +
-#   ggtitle("Traveling to milling") +
-#   scale_fill_manual(values=pnw_palette("Bay",n=2))
+ggplot(travel.mill, aes(x=t_index,y=reorder(call_type,desc(t_index)),height=num_calls,fill=encounter)) +
+  geom_ridgeline(scale=0.5,alpha=0.7) +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=0.7,lty=2) +
+  xlim(-15,5) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Traveling to milling") +
+  scale_fill_manual(values=pnw_palette("Bay",n=2))
 
 
 
 
 
 
-####################### call rate ~ time_to_transition models
-library(lme4)
-library(performance)
-library(DHARMa)
-
-#####data with call rates for each call type independently
-# data <- read_csv("mill.travel_type.csv") %>% 
-#   mutate(encounter=as.factor(encounter))
+# ####################### call rate ~ time_to_transition models
+# library(lme4)
+# library(performance)
+# library(DHARMa)
 # 
-# test <-glmer(aws ~ t_index + (1|encounter), family=poisson(link="log"), data=data)
-
-
-
-
-####call rates total
-
-##mill to travel
-#histogram
-ggplot(data=mill.travel, aes(x=num_calls)) +
-  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
-  theme_classic() +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
-  labs(x="Total call rate (#calls/minute)",y="Count") 
-
-#poisson model
-m.t_model <- glmer(num_calls ~ t_index + (1|encounter), family=poisson(link="log"), data=mill.travel)
-
-summary(m.t_model)
-check_overdispersion(m.t_model)
-check_zeroinflation(m.t_model)
-
-#negative binomial model
-m.t_nb <-glmer.nb(num_calls ~ t_index + (1|encounter), data=mill.travel)
-
-summary(m.t_nb)
-check_overdispersion(m.t_nb)
-check_zeroinflation(m.t_nb)
-
-#check residuals
-simulateResiduals(fittedModel = m.t_nb, plot = T)
-
-
-####travel to mill
-#histogram
-ggplot(data=travel.mill, aes(x=num_calls)) +
-  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
-  theme_classic() +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
-  labs(x="Total call rate (#calls/minute)",y="Count") 
-
-#poisson model
-t.m_model <- glmer(num_calls ~ t_index + (1|encounter), family=poisson(link="log"), data=travel.mill)
-
-summary(t.m_model)
-check_overdispersion(t.m_model)
-check_zeroinflation(t.m_model)
-
-#negative binomial model
-t.m_nb <-glmer.nb(num_calls ~ t_index + (1|encounter), data=travel.mill)
-
-summary(t.m_nb)
-check_overdispersion(t.m_nb)
-check_zeroinflation(t.m_nb)
-
-#check residuals
-simulateResiduals(fittedModel = t.m_nb, plot = T)
+# ##mill to travel
+# #histogram
+# ggplot(data=mill.travel, aes(x=num_calls)) +
+#   geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
+#   theme_classic() +
+#   scale_y_continuous(expand=c(0,0)) +
+#   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
+#   labs(x="Total call rate (#calls/minute)",y="Count") 
+# 
+# #poisson model
+# m.t_model <- glmer(num_calls ~ t_index + (1|encounter), family=poisson(link="log"), data=mill.travel)
+# 
+# summary(m.t_model)
+# check_overdispersion(m.t_model)
+# check_zeroinflation(m.t_model)
+# 
+# #negative binomial model
+# m.t_nb <-glmer.nb(num_calls ~ t_index + (1|encounter), data=mill.travel)
+# 
+# summary(m.t_nb)
+# check_overdispersion(m.t_nb)
+# check_zeroinflation(m.t_nb)
+# 
+# #check residuals
+# simulateResiduals(fittedModel = m.t_nb, plot = T)
+# 
+# 
+# ####travel to mill
+# #histogram
+# ggplot(data=travel.mill, aes(x=num_calls)) +
+#   geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
+#   theme_classic() +
+#   scale_y_continuous(expand=c(0,0)) +
+#   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
+#   labs(x="Total call rate (#calls/minute)",y="Count") 
+# 
+# #poisson model
+# t.m_model <- glmer(num_calls ~ t_index + (1|encounter), family=poisson(link="log"), data=travel.mill)
+# 
+# summary(t.m_model)
+# check_overdispersion(t.m_model)
+# check_zeroinflation(t.m_model)
+# 
+# #negative binomial model
+# t.m_nb <-glmer.nb(num_calls ~ t_index + (1|encounter), data=travel.mill)
+# 
+# summary(t.m_nb)
+# check_overdispersion(t.m_nb)
+# check_zeroinflation(t.m_nb)
+# 
+# #check residuals
+# simulateResiduals(fittedModel = t.m_nb, plot = T)
 
 

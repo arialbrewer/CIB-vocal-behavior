@@ -14,6 +14,7 @@ library(see)
 library(patchwork)
 library(DHARMa)
 library(MuMIn)
+library(lmtest)
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -484,16 +485,7 @@ check_model(glmm.nb2)
 library(glmmTMB)
 library(bbmle) #for AICtab
 
-## sarah says build truncated_poisson first then if still zero-inflated use truncated_nbinom
-##can I use offset with hurdle model????
-#without offset
-test<-glmmTMB(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
-             ziformula= ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
-             family=truncated_poisson, data=callrate_total)
-
-summary(test)
-
-#not using offset
+#Poisson
 hur.pois<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
                   ziformula= ~ behavior + group_size + calf_presence + tide + (1|encounter),
                   family=truncated_poisson, data=callrate_total)
@@ -507,7 +499,6 @@ check_overdispersion(hur.pois)
 #check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
 sum(residuals(hur.pois,type="pearson")^2)/1039 #not overdispersed = 1.0
 
-
 #check residuals
 simulateResiduals(fittedModel = hur.pois, plot = T)
 
@@ -518,8 +509,6 @@ pchisq(X2, df,lower.tail = FALSE)
 #reject null- model not a good fit
 
 
-
-
 #negative binomial
 hur.nb<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
              ziformula= ~ behavior + group_size + calf_presence + tide + (1|encounter),
@@ -528,28 +517,13 @@ hur.nb<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|enc
 summary(hur.nb)
 plot(parameters(hur.nb))
 
-#check overdispersion with performance package
-check_overdispersion(hur.nb)
-
-#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
-sum(residuals(hur.nb,type="pearson")^2)/1038 # model is not overdispersed
-
-#check zero-inflation with performance package
-check_zeroinflation(hur.nb)
-
 #check residuals
 simulateResiduals(fittedModel = hur.nb, plot = T)
 
-
 #comparing hurdle poisson and hurdle nb
-#lrtest
-library(lmtest)
 lrtest(hur.pois,hur.nb)   #nb is better model
 
 AICtab(hur.pois,hur.nb)   #nb is better model
-
-
-
 
 
 ################### Model diagnostics
@@ -569,9 +543,7 @@ plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
 #encounter
 plot(callrate_total$encounter, E, xlab="Encounter", ylab="Residuals")
 
-###Other options to examine residuals
-#DHARMa randomized quantile residuals
-simulationOutput <- simulateResiduals(fittedModel = hur.nb, plot = T)
+
 
 
 
