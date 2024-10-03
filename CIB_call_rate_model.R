@@ -507,8 +507,6 @@ check_overdispersion(hur.pois)
 #check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
 sum(residuals(hur.pois,type="pearson")^2)/1039 #not overdispersed = 1.0
 
-#check zero-inflation with performance package
-check_zeroinflation(hur.pois)
 
 #check residuals
 simulateResiduals(fittedModel = hur.pois, plot = T)
@@ -543,13 +541,37 @@ check_zeroinflation(hur.nb)
 simulateResiduals(fittedModel = hur.nb, plot = T)
 
 
+#comparing hurdle poisson and hurdle nb
+#lrtest
+library(lmtest)
+lrtest(hur.pois,hur.nb)   #nb is better model
+
+AICtab(hur.pois,hur.nb)   #nb is better model
 
 
-AICtab(hur.pois,hur.nb)
 
 
 
+################### Model diagnostics
+#examining residuals    
+E <- residuals(hur.nb)
 
+#group size
+callrate_total$rate_group_size <- cut(callrate_total$group_size, seq(0, 60, by=10))
+plot(callrate_total$rate_group_size, E, xlab="Group size",ylab="Residuals")
+
+#behavior
+plot(callrate_total$behavior, E, xlab="Behavior", ylab="Residuals")
+
+#calf presence
+plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
+
+#encounter
+plot(callrate_total$encounter, E, xlab="Encounter", ylab="Residuals")
+
+###Other options to examine residuals
+#DHARMa randomized quantile residuals
+simulationOutput <- simulateResiduals(fittedModel = hur.nb, plot = T)
 
 
 

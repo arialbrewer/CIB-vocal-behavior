@@ -147,6 +147,7 @@ ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
              position = position_stack(vjust = 0.5),
              show.legend = F) +
   labs(fill="Call category") +
+  theme(text=element_text(family="serif", size=14)) +
   scale_fill_manual(values=pal)
 
 ###summarize call categories by covariates
