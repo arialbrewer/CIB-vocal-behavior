@@ -1,19 +1,15 @@
 #Arial Brewer
-#PhD- Chapter 2 Vocal Behavior
-#Model: calling rate ~ behavior + group size + calf presence + tide + (1|encounter)
+#PhD Chapter 2: CIB Vocal Behavior- calling rate model
 
 #load packages
 library(tidyverse)
 library(corrplot)
-library(viridis)
-library(lme4)
-library(MASS)
+library(patchwork)
 library(performance)
 library(parameters)
-library(see)
-library(patchwork)
 library(DHARMa)
-library(MuMIn)
+library(glmmTMB)
+library(bbmle) 
 library(lmtest)
 
 #load data
@@ -69,7 +65,7 @@ x <- cor(callrate_total2[3:7])
 corrplot(x, type="upper",order="hclust",addCoef.col = "black")
 
 
-####Explore raw data patterns
+####Exploratory plots
 behavior_type <- callrate_total %>% 
   group_by(behavior) %>% 
   summarise(number=n()) %>% 
@@ -322,168 +318,7 @@ mean(callrate_total$n_minute)
 var(callrate_total$n_minute)
 
 
-################### Model building - GLMM
-##test model to see coefficient of group size
-test<-glmer(n_minute ~ behavior + log(group_size) + calf_presence + tide + (1|encounter),
-                 family=poisson(link="log"), data=callrate_total)
-
-summary(test)   #coefficient= 1.1 so we can use offset for group size
-
-#Poisson with offset on group size
-glmm.pois<-glmer(n_minute ~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-              family=poisson(link="log"), data=callrate_total)
-
-summary(glmm.pois)
-
-#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
-sum(residuals(glmm.pois,type="pearson")^2)/1046 
-
-#check overdispersion with performance package
-check_overdispersion(glmm.pois) #over-dispersed
-
-#check zero-inflation with performance package
-check_zeroinflation(glmm.pois)  #zero-inflation
-
-#check zero-inflation with dharma package
-testZeroInflation(glmm.pois)
-
-#check residuals
-simulateResiduals(fittedModel = glmm.pois, plot = T)
-
-#Chi2 Goodness of fit test (null hypothesis= model is correctly specified)  
-X2 <- sum((callrate_total$n_minute - fitted(glmm.pois))^2 / fitted(glmm.pois))
-df <- length(callrate_total$n_minute)-length(coef(glmm.pois))
-pchisq(X2, df,lower.tail = FALSE)
-#reject null- model not a good fit
-
-
-##Fit negative binomial since poisson model is over-dispersed and zero-inflated:
-glmm.nb<-glmer.nb(n_minute~ behavior + offset(log(group_size)) + calf_presence + tide + (1|encounter),
-                  data=callrate_total,na.action="na.fail")
-
-summary(glmm.nb)
-plot(parameters(glmm.nb))
-
-#check zero-inflation with performance package
-check_zeroinflation(glmm.nb)   #no zero-inflation
-
-#check residuals- better with nb
-simulateResiduals(fittedModel = glmm.nb, plot = T)
-
-###model selection via dredge
-dredge(glmm.nb)
-
-
-####manual model selection for fixed effects
-glmm.nb0<-glmer.nb(n_minute ~ offset(log(group_size)) + (1|encounter),
-                   data=callrate_total)
-
-glmm.nb1<-glmer.nb(n_minute ~ offset(log(group_size)) + behavior + (1|encounter),
-                  data=callrate_total)
-
-glmm.nb2<-glmer.nb(n_minute ~ offset(log(group_size)) + behavior + calf_presence + (1|encounter),
-                  data=callrate_total)
-
-glmm.nb3<-glmer.nb(n_minute ~ offset(log(group_size)) + behavior + tide + (1|encounter),
-                   data=callrate_total)
-
-glmm.nb4<-glmer.nb(n_minute ~ offset(log(group_size)) + behavior + calf_presence + tide + (1|encounter),
-                  data=callrate_total)
-
-glmm.nb5<-glmer.nb(n_minute ~ offset(log(group_size)) + calf_presence + (1|encounter),
-                  data=callrate_total)
-
-glmm.nb6<-glmer.nb(n_minute ~ offset(log(group_size)) + calf_presence + tide + (1|encounter),
-                   data=callrate_total)
-
-glmm.nb7<-glmer.nb(n_minute ~ offset(log(group_size)) + tide + (1|encounter),
-                   data=callrate_total)
-
-
-#model selection
-AIC(glmm.nb0,glmm.nb1,glmm.nb2,glmm.nb3,glmm.nb4,glmm.nb5,glmm.nb6,glmm.nb7) 
-#nb2 is the best model (model without tide)- matches dredge result
-
-
-#model summary
-summary(glmm.nb2) 
-plot(parameters(glmm.nb2))
-
-#model overall performance
-#Conditional R2: takes both the fixed and random effects into account.
-#Marginal R2: considers only the variance of the fixed effects.
-model_performance(glmm.nb2)
-
-#check overdispersion parameter manually (X2/df.resid)
-sum(residuals(glmm.nb2,type="pearson")^2)/1046
-
-
-#another way manually (null=there is no over-dispersion)
-overdisp_fun <- function(model) {
-  rdf <- df.residual(model)
-  rp <- residuals(model,type="pearson")
-  Pearson.chisq <- sum(rp^2)
-  prat <- Pearson.chisq/rdf
-  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
-  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
-}
-overdisp_fun(glmm.nb2) #fail to reject null=no over-dispersion
-
-#check zero-inflation
-check_zeroinflation(glmm.nb2)  
-
-#95% confidence intervals
-confint(glmm.nb2, level=0.95)
-
-###manually plot with CI
-#new dataframe with model coefficients and CI
-model_summ <- data.frame(variable=c("Behavior [trave]","Calf presence [yes]"),
-                         coefficient=c(1.248,0.575),
-                         lower=c(0.678,-0.134),
-                         upper=c(1.84,1.291),
-                         sig=c("yes","no"))
-
-ggplot(data=model_summ, aes(x=coefficient, y=variable, color=sig)) +
-  geom_point() +
-  geom_pointrange(aes(xmin=lower,xmax=upper)) +
-  geom_vline(xintercept=0,lty=2) +
-  theme_classic() +
-  scale_x_continuous(breaks=seq(-1.5,1.5,by=0.5)) +
-  labs(x="Coefficient", y=" Variable", color="Significant")
-
-
-################### Model diagnostics
-#examining residuals    
-E <- residuals(glmm.nb2)
-
-#group size
-callrate_total$rate_group_size <- cut(callrate_total$group_size, seq(0, 60, by=10))
-plot(callrate_total$rate_group_size, E, xlab="Group size",ylab="Residuals")
-
-#behavior
-plot(callrate_total$behavior, E, xlab="Behavior", ylab="Residuals")
-
-#calf presence
-plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
-
-#encounter
-plot(callrate_total$encounter, E, xlab="Encounter", ylab="Residuals")
-
-###Other options to examine residuals
-#DHARMa randomized quantile residuals
-simulationOutput <- simulateResiduals(fittedModel = glmm.nb2, plot = T)
-
-#performance package
-check_model(glmm.nb2)
-
-
-
-
-#########################################################################
-#Sarah recommends running a hurdle model instead of glmm.nb bc zero-inflation is still an issue
-###glmmTMB
-library(glmmTMB)
-library(bbmle) #for AICtab
+################### Model building- Hurdle model
 
 #Poisson
 hur.pois<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
@@ -540,43 +375,27 @@ plot(callrate_total$behavior, E, xlab="Behavior", ylab="Residuals")
 #calf presence
 plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
 
+#tide
+plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
+
 #encounter
 plot(callrate_total$encounter, E, xlab="Encounter", ylab="Residuals")
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-############ Predictions   
-# library(ggeffects)
-# #predictions by all variables- condition used since we have an offset on group size
-# pred <- predict_response(glmm.nb2,terms=c("behavior","calf_presence","group_size"),condition=c(group_size=1))
-# print(pred,collapse_ci=TRUE)
-# plot(pred)
+###### Predictions   ???
+library(ggeffects)
+#predictions by all variables- condition used since we have an offset on group size
+pred <- predict_response(hur.nb,terms=c("behavior","calf_presence","group_size","tide"),condition=c(group_size=1))
+print(pred,collapse_ci=TRUE)
+plot(pred)
 
 
 ###Sarah recommends this way
 #set up new prediction dataframe
 # newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
 # 
-# 
 # pred <- predict(glmm.nb2,newData,type="response")
-# 
 # 
 # #number of bootstrap samples and set up to store the results 
 # boot.samps <- 500 

@@ -1,20 +1,11 @@
 #Arial Brewer
-#PhD- Chapter 2 Vocal Behavior
-#Model: call category ~ behavior + group size + calf presence + tide + (1|encounter)
+#PhD Chapter 2: CIB Vocal Behavior- call category model
 
 #load packages
 library(tidyverse)
 library(corrplot)
 library(mgcv)
 library(mgcViz)
-library(performance)
-library(parameters)
-library(see)
-library(gratia)
-library(MASS)
-library(lme4)
-library(DHARMa)
-library(MuMIn)
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -65,7 +56,7 @@ x <- cor(callcat_total2[3:7])
 corrplot(x, type="upper",order="hclust",addCoef.col = "black")
 
 
-###Explore raw data patterns
+###Exploratory plots
 behavior_type <- callcat_total %>% 
   group_by(behavior) %>% 
   summarise(number=n()) %>% 
@@ -232,13 +223,13 @@ callcat_total %>%
 
 
 #################### Model building
-#GAM with multinomial distribution using mgcv package
+#Multinomial distribution using mgcv package
 
 #default levels are cc,pc,ws
 levels(callcat_total$call_category)
 
-#relevel so CC is level 0 (reference level)
-callcat_total$call_category <- relevel(callcat_total$call_category,ref = "cc")
+#relevel so ws is level 0 (reference level)
+callcat_total$call_category <- relevel(callcat_total$call_category,ref = "ws")
 callcat_total$call_category2 <- as.numeric(callcat_total$call_category)-1
 levels(callcat_total$call_category)
 
@@ -322,7 +313,6 @@ AIC(mn2,mn3,mn4,mn15)
 
 #model summary
 summary(mn4)
-plot(parameters(mn4))
 
 ##calculate 95% CI= (Coef +/- 1.96 * SE).
 #cc for behavior-travel
@@ -359,7 +349,7 @@ plot(parameters(mn4))
 
 
 ###plot model coefficients, CI and significance 
-#without CC-calf presence (masks other variable CI)
+#without CC-calf presence because parameter is unidentifiable
 #new dataframe with model coefficients and CI
 model_summ <- data.frame(variable=c("CC-Behavior [trave]","CC-Group size","CC-Tide [flood]", 
                                     "PC-Behavior [travel]","PC-Calf presence [yes]","PC-Group size","PC-Tide [flood]"),
@@ -382,27 +372,9 @@ ggplot(data=model_summ, aes(x=coefficient, y=variable, color=sig)) +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant")
 
-#new dataframe with CC-calf presence only
-model_summ_cc.calf <- data.frame(variable="CC-Calf presence [yes]",
-                         coefficient=21.74,
-                         lower=-201466.3,
-                         upper=201509.7,
-                         sig="no")
-
-ggplot(data=model_summ_cc.calf, aes(x=coefficient, y=variable,color=sig)) +
-  geom_point() +
-  geom_pointrange(aes(xmin=lower,xmax=upper)) +
-  geom_vline(xintercept=0,lty=2) +
-  theme_classic() +
-  labs(x="Coefficient", y=" Variable", color="Significant") 
 
 
 #### Model-diagnostics
-plot(mn4, pages=1, all.terms = TRUE, rug=FALSE, residuals=TRUE, shade=TRUE, shift=coef(mn4)[1])
-
-#examining qq plot further
-qq.gam(mn4,pch=1)
-
 #examining residuals
 E <- residuals(mn4)
 
@@ -419,128 +391,12 @@ plot(callcat_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
 #tide
 plot(callcat_total$tide, E, xlab="Tide", ylab="Residuals")
 
-#encounter
-plot(callcat_total$encounter, E, xlab="Encounter", ylab="Residuals")
 
 
-
-# #### Predictions (1=ws, 2=cc, 3=pc)    
-# preds <- predict(mn4, type="response")
-# head(preds)
-# boxplot(preds, type="response")
-
-
-
-###############################################################################
-###remove cc to test binomial with ws and pc
-#read in data with just ws and pc
-callcat_binom <- read.csv("call_cat_ws_pc.csv") %>% 
-    mutate(behavior=as.factor(behavior),
-           calf_presence=as.factor(calf_presence),
-           tide=as.factor(tide),
-           encounter=as.factor(encounter),
-           group_size=as.integer(group_size),
-           call_category=as.factor(call_category))
-
-levels(callcat_binom$call_category)
-
-#relevel so ws is reference
-callcat_binom$call_category <- relevel(callcat_binom$call_category,ref = "ws")
-#check levels
-levels(callcat_binom$call_category)
-
-#call_cat_binom$call_category2 <- as.numeric(call_cat_binom$call_category)-1
-#all(call_cat_binom$call_category2 %in% c(0L, 1L))
-
-
-#full binomial model
-binom_model <- glmer(call_category ~ behavior + group_size + calf_presence + tide + (1|encounter),
-                      data=callcat_binom,
-                      family="binomial",na.action="na.fail")
-
-summary(binom_model)
-
-
-#model selection on fixed effects
-binom0 <- glmer(call_category ~ (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom1 <- glmer(call_category ~ behavior + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom2 <- glmer(call_category ~ behavior + calf_presence + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom3 <- glmer(call_category ~ behavior + calf_presence + group_size + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom4 <- glmer(call_category ~ behavior + calf_presence + group_size + tide + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom5 <- glmer(call_category ~ calf_presence + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom6 <- glmer(call_category ~ calf_presence + group_size + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom7 <- glmer(call_category ~ calf_presence + group_size + tide + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom8 <- glmer(call_category ~ calf_presence + tide + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom9 <- glmer(call_category ~ group_size + (1|encounter),
-           data = callcat_binom, family="binomial")
-
-binom10 <- glmer(call_category ~ group_size + tide + (1|encounter),
-            data = callcat_binom, family="binomial")
-
-binom11 <- glmer(call_category ~ group_size + behavior + (1|encounter),
-            data = callcat_binom, family="binomial")
-
-binom12 <- glmer(call_category ~ group_size + behavior + tide + (1|encounter),
-            data = callcat_binom, family="binomial")
-
-binom13 <- glmer(call_category ~ tide + (1|encounter),
-            data = callcat_binom, family="binomial")
-
-binom14 <- glmer(call_category ~ tide + behavior + (1|encounter),
-            data = callcat_binom, family="binomial")
-
-binom15 <- glmer(call_category ~ tide + behavior + calf_presence + (1|encounter),
-            data = callcat_binom, family="binomial")
-
-
-AIC(binom0,binom1,binom2,binom3,binom4,binom5,binom6,binom7,binom8,binom9,binom10,binom11,binom12,binom13,binom14,binom15)  
-#binom2 best model (behavior,calf)
-
-#model selection with dredge
-dredge(binom_model) #same result as AIC (behavior,calf)
-
-summary(binom2)
-plot(parameters(binom2))
-
-#check overdispersion with performance package
-check_overdispersion(binom2)
-
-#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
-sum(residuals(binom2,type="pearson")^2)/1672   #not overdispersed
-
-#check residuals
-simulateResiduals(fittedModel = binom2, plot = T)
-
-#95% confidence intervals
-confint(binom2, level=0.95)
-
-
-###examining residuals
-E <- residuals(binom2)
-
-#behavior
-plot(callcat_binom$behavior, E, xlab="Behavior", ylab="Residuals")
-
-#calf presence
-plot(callcat_binom$calf_presence, E, xlab="Calf presence", ylab="Residuals")
+### Predictions (1=ws, 2=cc, 3=pc)    
+preds <- predict(mn4, type="response")
+head(preds)
+boxplot(preds, type="response")
 
 
 
