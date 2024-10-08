@@ -23,7 +23,7 @@ behavior_data <- behavior_files %>%
   reduce(rbind) %>% 
   dplyr::select(-sample_round,-group_number,-dot,-count_white,-count_gray,-count_calf,-comments)
 
-#combine behavioral & acoustic data, remove NAs (zeros don't matter), and change to factors
+#combine behavioral & acoustic data and remove NAs
 callcat_total <- behavior_data %>% 
   left_join(acoustic_data, by = c("date","time"), multiple = "all") %>% 
   na.omit() %>% 
@@ -35,7 +35,7 @@ callcat_total <- behavior_data %>%
         call_category=as.factor(call_category))
 
 
-###Test for correlation between covariates
+###Test for correlation between variables
 ##create duplicate dataframe
 callcat_total2 <- behavior_data %>% 
   left_join(acoustic_data, by = c("date","time"), multiple = "all") %>% 
@@ -141,7 +141,7 @@ ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
   theme(text=element_text(family="serif", size=14)) +
   scale_fill_manual(values=pal)
 
-###summarize call categories by covariates
+###summarize call categories by variables
 #behavior
 callcat_behavior <- callcat_total %>% 
   group_by(behavior,call_category) %>% 
@@ -236,9 +236,8 @@ levels(callcat_total$call_category)
 #categories must be coded 0 to K
 all(callcat_total$call_category2 %in% c(0L, 1L, 2L))
 
-##K=number of levels of response-1. Because there we have K=2, we repeat the formula twice within a list
-
-#manual model selection 
+##K=number of levels of response-1. Because we have K=2, we repeat the formula twice within a list
+#model selection 
 mn0 <- gam(list(call_category2 ~ s(encounter,bs="re"),
                                ~ s(encounter,bs="re")),
            data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
@@ -348,29 +347,73 @@ summary(mn4)
 -9.783e-01 - 1.96*1.339e+00
 
 
-###plot model coefficients, CI and significance 
+#plot model coefficients and CI
 #without CC-calf presence because parameter is unidentifiable
-#new dataframe with model coefficients and CI
-model_summ <- data.frame(variable=c("CC-Behavior [trave]","CC-Group size","CC-Tide [flood]", 
+#create new dataframe with model coefficients and CI for cc and pc
+model_summ <- data.frame(variable=c("CC-Behavior [travel]","CC-Group size","CC-Tide [flood]", 
                                     "PC-Behavior [travel]","PC-Calf presence [yes]","PC-Group size","PC-Tide [flood]"),
                          coefficient=c(-2.469,0.051,0.247,-0.927,-2.674,0.003,-0.978),
                          lower=c(-3.573,-0.027,-2.771,-1.312,-3.568,-0.007,-3.603),
                          upper=c(-1.365,0.129,3.266,-0.541,-1.78,0.013,1.646),
-                         sig=c("yes","no","no","yes","yes","no","no"))
+                         sig=c("yes","no","no","yes","yes","no","no")) %>% 
+   mutate(variable=as.factor(variable))
 
-
-#reorder variables so cc is first                   
-# #mn4.summ %>% mutate(variable=factor(variable, levels=c("CC-Behavior-travel", "CC-Group size", "CC-Tide-flood", 
-#                                                   "PC-Behavior-travel", "PC-Calf presence-yes",
-#                                                   "PC-Group size", "PC-Tide-flood")))
-
-ggplot(data=model_summ, aes(x=coefficient, y=variable, color=sig)) +
+#relevel so cc is first
+pal <- c("red","deepskyblue4")
+model_summ %>% 
+  mutate(variable=fct_relevel(variable,"CC-Behavior [travel]","CC-Group size","CC-Tide [flood]", 
+                              "PC-Behavior [travel]","PC-Calf presence [yes]","PC-Group size","PC-Tide [flood]")) %>% 
+ggplot(aes(x=coefficient, y=variable, color=sig)) +
   geom_point() +
   geom_pointrange(aes(xmin=lower,xmax=upper)) +
   geom_vline(xintercept=0,lty=2) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
-  labs(x="Coefficient", y=" Variable", color="Significant")
+  labs(x="Coefficient", y=" Variable", color="Significant") +
+  scale_color_manual(values=pal)
+
+
+
+###cc only
+cc_summ <- data.frame(variable=c("Behavior","Group size","Tide"),
+                         coefficient=c(-2.469,0.051,0.247),
+                         lower=c(-3.573,-0.027,-2.771),
+                         upper=c(-1.365,0.129,3.266),
+                         sig=c("yes","no","no")) %>% 
+  mutate(variable=as.factor(variable))
+
+#couldn't get behavior to be first so reversed order and will manually change level labels
+pal <- c("red","deepskyblue4")
+ggplot(data=cc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
+  geom_point(size=5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(-4,4,by=1)) +
+  labs(x="Coefficient", y=" Variable", color="Significant") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_color_manual(values=pal)
+
+
+###pc only
+pc_summ <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
+                      coefficient=c(-0.927,-2.674,0.003,-0.978),
+                      lower=c(-1.312,-3.568,-0.007,-3.603),
+                      upper=c(-0.541,-1.78,0.013,1.646),
+                      sig=c("yes","yes","no","no")) %>% 
+  mutate(variable=as.factor(variable))
+
+#couldn't get behavior to be first so reversed order and will manually change level labels
+pal <- c("red","deepskyblue4")
+ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
+  geom_point(size=5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(-4,4,by=1)) +
+  labs(x="Coefficient", y=" Variable", color="Significant") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_color_manual(values=pal)
 
 
 

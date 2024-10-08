@@ -313,13 +313,9 @@ stats.tide <- callrate_total %>%
             #relative_mean=mean(n_minute_group),relative_sd=sd(n_minute_group)) 
 
 
-#possible over-dispersion in calling rate- test with model
-mean(callrate_total$n_minute)
-var(callrate_total$n_minute)
 
 
 ################### Model building- Hurdle model
-
 #Poisson
 hur.pois<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
                   ziformula= ~ behavior + group_size + calf_presence + tide + (1|encounter),
@@ -328,11 +324,8 @@ hur.pois<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|e
 summary(hur.pois)
 plot(parameters(hur.pois))
 
-#check overdispersion with performance package
-check_overdispersion(hur.pois)
-
 #check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
-sum(residuals(hur.pois,type="pearson")^2)/1039 #not overdispersed = 1.0
+sum(residuals(hur.pois,type="pearson")^2)/1039 
 
 #check residuals
 simulateResiduals(fittedModel = hur.pois, plot = T)
@@ -360,8 +353,55 @@ lrtest(hur.pois,hur.nb)   #nb is better model
 
 AICtab(hur.pois,hur.nb)   #nb is better model
 
+#calculate 95% CI
+confint(hur.nb)
 
-################### Model diagnostics
+###plot coefficients and CI
+#zero-inflation (first part of hurdle- binomial)
+hurdle1 <- data.frame(variable=c("Behavior","Group size","Calf presence","Tide"),
+                      coefficient=c(-0.804,-0.088,-0.768,-0.157),
+                      lower=c(-1.294,-0.123,-1.583,-2.314),
+                      upper=c(-0.313,-0.053,0.048,2.001),
+                      sig=c("yes","yes","no","no")) %>% 
+  mutate(variable=as.factor(variable))
+
+#couldn't get behavior to be first so reversed order and will manually change level labels
+pal <- c("red","deepskyblue4")
+ggplot(data=hurdle1,aes(x=coefficient, y=rev(variable), color=sig)) +
+  geom_point(size=5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(-4,4,by=1)) +
+  labs(x="Coefficient", y=" Variable", color="Significant") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_color_manual(values=pal)
+
+
+
+#conditional (second part of hurdle- truncated neg bin)
+hurdle2 <- data.frame(variable=c("Behavior","Group size","Calf presence","Tide"),
+                      coefficient=c(0.027,0.041, 0.820,-1.408),
+                      lower=c(-0.353,0.027,-0.006,-1.969),
+                      upper=c(0.407,0.054,1.646,-0.847),
+                      sig=c("no","yes","no","yes")) %>% 
+  mutate(variable=as.factor(variable))
+
+#couldn't get behavior to be first so reversed order and will manually change level labels
+pal <- c("red","deepskyblue4")
+ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
+  geom_point(size=5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(-4,4,by=1)) +
+  labs(x="Coefficient", y=" Variable", color="Significant") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_color_manual(values=pal)
+
+
+
+## Model diagnostics
 #examining residuals    
 E <- residuals(hur.nb)
 
@@ -378,15 +418,14 @@ plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
 #tide
 plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
 
-#encounter
-plot(callrate_total$encounter, E, xlab="Encounter", ylab="Residuals")
+
 
 
 
 ###### Predictions   ???
 library(ggeffects)
-#predictions by all variables- condition used since we have an offset on group size
-pred <- predict_response(hur.nb,terms=c("behavior","calf_presence","group_size","tide"),condition=c(group_size=1))
+#predictions by all variables
+pred <- predict_response(hur.nb,terms=c("behavior","calf_presence","group_size","tide"))
 print(pred,collapse_ci=TRUE)
 plot(pred)
 
