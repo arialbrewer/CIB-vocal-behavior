@@ -383,10 +383,10 @@ cc_summ <- data.frame(variable=c("Behavior","Group size","Tide"),
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red","deepskyblue4")
+pal <- c("red3","deepskyblue4")
 ggplot(data=cc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
-  geom_point(size=5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_point(size=3.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
   geom_vline(xintercept=0,lty=2,lwd=0.5) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
@@ -404,10 +404,10 @@ pc_summ <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide")
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red","deepskyblue4")
+pal <- c("red3","deepskyblue4")
 ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
-  geom_point(size=5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_point(size=3.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
   geom_vline(xintercept=0,lty=2,lwd=0.5) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +

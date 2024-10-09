@@ -366,10 +366,10 @@ hurdle1 <- data.frame(variable=c("Behavior","Group size","Calf presence","Tide")
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red","deepskyblue4")
+pal <- c("red3","deepskyblue4")
 ggplot(data=hurdle1,aes(x=coefficient, y=rev(variable), color=sig)) +
-  geom_point(size=5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_point(size=3.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
   geom_vline(xintercept=0,lty=2,lwd=0.5) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
@@ -388,10 +388,10 @@ hurdle2 <- data.frame(variable=c("Behavior","Group size","Calf presence","Tide")
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red","deepskyblue4")
+pal <- c("red3","deepskyblue4")
 ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
-  geom_point(size=5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_point(size=3.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
   geom_vline(xintercept=0,lty=2,lwd=0.5) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
