@@ -316,9 +316,18 @@ stats.tide <- callrate_total %>%
 
 
 ################### Model building- Hurdle model
+#check covariate levels
+levels(callrate_total$behavior)
+levels(callrate_total$calf_presence)
+levels(callrate_total$tide) 
+
+#tide is switched around from call cat model, need to set ebb as reference level
+callrate_total$tide <- relevel(callrate_total$tide,ref = "Ebb")
+levels(callrate_total$tide) 
+
 #Poisson
-hur.pois<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
-                  ziformula= ~ behavior + group_size + calf_presence + tide + (1|encounter),
+hur.pois<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
+                  ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
                   family=truncated_poisson, data=callrate_total)
 
 summary(hur.pois)
@@ -338,8 +347,8 @@ pchisq(X2, df,lower.tail = FALSE)
 
 
 #negative binomial
-hur.nb<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
-             ziformula= ~ behavior + group_size + calf_presence + tide + (1|encounter),
+hur.nb<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
+             ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total)
 
 summary(hur.nb)
@@ -348,9 +357,10 @@ plot(parameters(hur.nb))
 #check residuals
 simulateResiduals(fittedModel = hur.nb, plot = T)
 
-#comparing hurdle poisson and hurdle nb
+###comparing hurdle poisson and hurdle nb
+#likelihood ratio test
 lrtest(hur.pois,hur.nb)   #nb is better model
-
+#AIC
 AICtab(hur.pois,hur.nb)   #nb is better model
 
 #calculate 95% CI
@@ -358,11 +368,11 @@ confint(hur.nb)
 
 ###plot coefficients and CI
 #zero-inflation (first part of hurdle- binomial)
-hurdle1 <- data.frame(variable=c("Behavior","Group size","Calf presence","Tide"),
-                      coefficient=c(-0.804,-0.088,-0.768,-0.157),
-                      lower=c(-1.294,-0.123,-1.583,-2.314),
-                      upper=c(-0.313,-0.053,0.048,2.001),
-                      sig=c("yes","yes","no","no")) %>% 
+hurdle1 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
+                      coefficient=c(-0.804,-0.768,-0.088,0.157),
+                      lower=c(-1.294,-1.583,-0.123,-2.001),
+                      upper=c(-0.313,0.048,-0.053,2.314),
+                      sig=c("yes","no","yes","no")) %>% 
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
@@ -380,11 +390,11 @@ ggplot(data=hurdle1,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 
 #conditional (second part of hurdle- truncated neg bin)
-hurdle2 <- data.frame(variable=c("Behavior","Group size","Calf presence","Tide"),
-                      coefficient=c(0.027,0.041, 0.820,-1.408),
-                      lower=c(-0.353,0.027,-0.006,-1.969),
-                      upper=c(0.407,0.054,1.646,-0.847),
-                      sig=c("no","yes","no","yes")) %>% 
+hurdle2 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
+                      coefficient=c(0.027,0.820,0.041,1.408),
+                      lower=c(-0.353,-0.006,0.027,0.847),
+                      upper=c(0.407,1.646,0.054,1.969),
+                      sig=c("no","no","yes","yes")) %>% 
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
@@ -398,6 +408,37 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
   theme(text=element_text(family="serif", size=14)) +
   scale_color_manual(values=pal)
+
+
+
+#####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
+
+### ZI model (part one of hurdle)
+#behavior (travel)
+(exp(-0.804)-1)*100
+
+#calf presence (yes)
+(exp(-0.768)-1)*100
+
+#group size
+(exp(-0.088)-1)*100
+
+#tide (flood)
+(exp(0.157)-1)*100
+
+
+### conditional model (part two of hurdle)
+#behavior (travel)
+(exp(0.027)-1)*100
+
+#calf presence (yes)
+(exp(0.820)-1)*100
+
+#group size
+(exp(0.041)-1)*100
+
+#tide (flood)
+(exp(1.408)-1)*100
 
 
 
@@ -420,9 +461,7 @@ plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 
-
-
-###### Predictions   ???
+###### Predictions
 library(ggeffects)
 #predictions by all variables
 pred <- predict_response(hur.nb,terms=c("behavior","calf_presence","group_size","tide"))

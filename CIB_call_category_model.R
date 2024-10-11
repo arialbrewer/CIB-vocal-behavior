@@ -228,6 +228,7 @@ callcat_total %>%
 #default levels are cc,pc,ws
 levels(callcat_total$call_category)
 
+
 #relevel so ws is level 0 (reference level)
 callcat_total$call_category <- relevel(callcat_total$call_category,ref = "ws")
 callcat_total$call_category2 <- as.numeric(callcat_total$call_category)-1
@@ -414,6 +415,33 @@ ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
   theme(text=element_text(family="serif", size=14)) +
   scale_color_manual(values=pal)
+
+
+#####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
+
+###Combined calls
+#behavior (travel)
+(exp(-2.469)-1)*100
+
+#group size
+(exp(0.051)-1)*100
+
+#tide (flood)
+(exp(0.247)-1)*100
+
+
+###Pulsed calls
+#behavior (travel)
+(exp(-0.927)-1)*100
+
+#calf presence (yes)
+(exp(-2.674)-1)*100
+
+#group size
+(exp(0.003)-1)*100
+
+#tide (flood)
+(exp(-0.978)-1)*100
 
 
 
