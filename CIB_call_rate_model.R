@@ -313,6 +313,14 @@ stats.tide <- callrate_total %>%
             #relative_mean=mean(n_minute_group),relative_sd=sd(n_minute_group)) 
 
 
+#how many zeros are present vs. non-zeros- data very zero-inflated
+table(callrate_total$n_minute)
+sum(callrate_total$n_minute>0)
+sum(callrate_total$n_minute<1)
+
+#data likely overdispersed
+mean(callrate_total$n_minute)
+var(callrate_total$n_minute)
 
 
 ################### Model building- Hurdle model
@@ -321,7 +329,7 @@ levels(callrate_total$behavior)
 levels(callrate_total$calf_presence)
 levels(callrate_total$tide) 
 
-#tide is switched around from call cat model, need to set ebb as reference level
+#tide is switched around from call cat model, set ebb as reference level
 callrate_total$tide <- relevel(callrate_total$tide,ref = "Ebb")
 levels(callrate_total$tide) 
 
@@ -412,7 +420,6 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 
 #####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
-
 ### ZI model (part one of hurdle)
 #behavior (travel)
 (exp(-0.804)-1)*100
@@ -426,7 +433,6 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 #tide (flood)
 (exp(0.157)-1)*100
 
-
 ### conditional model (part two of hurdle)
 #behavior (travel)
 (exp(0.027)-1)*100
@@ -439,7 +445,6 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 #tide (flood)
 (exp(1.408)-1)*100
-
 
 
 ## Model diagnostics
@@ -458,6 +463,81 @@ plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
 
 #tide
 plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
+
+
+
+
+#######################test for binomial (Hurdle part 1) to see which is reference (0 or 1)
+#add new column to create 0 and 1
+callrate_total$n_minute2 <- as.numeric(callrate_total$n_minute)
+
+#change non-zeros to 1
+callrate_total$n_minute2[callrate_total$n_minute2>0] <- 1
+
+#double check this worked and matches counts from original n_minute column
+sum(callrate_total$n_minute2>0)
+sum(callrate_total$n_minute2<1)
+
+#change to factor so we can relevel
+callrate_total <- callrate_total %>%
+  mutate(n_minute2=as.factor(n_minute2))
+
+head(callrate_total)
+
+#relevel so reference is 0 (probability of calling vs. reference of not calling)
+callrate_total$n_minute2 <- relevel(callrate_total$n_minute2,ref = "0")
+levels(callrate_total$n_minute2)
+
+#test model with just a binomial for first part of hurdle
+test<-glmmTMB(n_minute2 ~ behavior + calf_presence + group_size + tide + (1|encounter),
+                 family=binomial(link="logit"), data=callrate_total)
+
+summary(test)
+plot(parameters(test))
+
+##this is the opposite of what we see in glmmTMB hurdle. So for hurdle model,
+##it is modeling the probability that they are not calling with a reference of calling
+
+
+#calculate 95% CI
+confint(test)
+
+###plot coefficients and CI
+#zero-inflation (first part of hurdle- binomial)
+test <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
+                      coefficient=c(0.804,0.768,0.088,-0.157),
+                      lower=c(0.313,-0.048,0.053,-2.314),
+                      upper=c(1.294,1.583,0.123,2.001),
+                      sig=c("yes","no","yes","no")) %>% 
+  mutate(variable=as.factor(variable))
+
+#couldn't get behavior to be first so reversed order and will manually change level labels
+pal <- c("red3","deepskyblue4")
+ggplot(data=test,aes(x=coefficient, y=rev(variable), color=sig)) +
+  geom_point(size=3.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
+  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(-4,4,by=1)) +
+  labs(x="Coefficient", y=" Variable", color="Significant") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_color_manual(values=pal)
+
+
+#####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
+### ZI model (part one of hurdle)
+#behavior (travel)
+(exp(0.804)-1)*100
+
+#calf presence (yes)
+(exp(0.768)-1)*100
+
+#group size
+(exp(0.088)-1)*100
+
+#tide (flood)
+(exp(-0.157)-1)*100
+
 
 
 
