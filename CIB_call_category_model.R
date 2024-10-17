@@ -6,6 +6,7 @@ library(tidyverse)
 library(corrplot)
 library(mgcv)
 library(mgcViz)
+library(marginaleffects)
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -85,8 +86,7 @@ callcat_type <- callcat_total %>%
   arrange(perc) %>%
   mutate(labels = scales::percent(perc))
 
-pal <- c("gold2","darkseagreen","cyan4")
-pal2 <- c("gold2","cyan4")
+
 
 ###independent variables
 #behavior distribution
@@ -97,7 +97,7 @@ ggplot(data=behavior_type, aes(x="", y=number,fill=behavior)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_manual(values=pal2)
+  scale_fill_manual(values=c("gold2","cyan4"))
 
 #calf distribution
 ggplot(data=calf_type, aes(x="", y=number,fill=calf_presence)) +
@@ -107,7 +107,7 @@ ggplot(data=calf_type, aes(x="", y=number,fill=calf_presence)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_manual(values=pal2)
+  scale_fill_manual(values=c("gold2","cyan4"))
 
 #tide distribution
 ggplot(data=tide_type, aes(x="", y=number,fill=tide)) +
@@ -117,7 +117,7 @@ ggplot(data=tide_type, aes(x="", y=number,fill=tide)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_manual(values=pal2)
+  scale_fill_manual(values=c("gold2","cyan4"))
 
 #group size
 ggplot(data=callcat_total, aes(x=group_size)) +
@@ -130,7 +130,7 @@ ggplot(data=callcat_total, aes(x=group_size)) +
 
 ###dependent variable
 #call category distribution
-ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
+cc.dist.plot <- ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
   geom_bar(stat='identity',width=1, color='white')+
   coord_polar("y",start=0)+
   theme_void() + 
@@ -138,8 +138,12 @@ ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
              position = position_stack(vjust = 0.5),
              show.legend = F) +
   labs(fill="Call category") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_fill_manual(values=pal)
+  theme(text=element_text(family="serif", size=14),
+        panel.background = element_rect(fill='transparent'),
+        plot.background = element_rect(fill="transparent", color=NA)) +
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4")) 
+
+ggsave("cc_transparent_plot.png", cc.dist.plot, bg = "transparent") 
 
 ###summarize call categories by variables
 #behavior
@@ -152,7 +156,7 @@ ggplot(data=callcat_behavior, aes(x=behavior,y=number,fill=call_category)) +
   theme_classic() +
   labs(x="Behavior", y="Number",fill="Call category") +
   scale_y_continuous(expand=c(0,0)) +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
 
 #calf presence
 callcat_calf <- callcat_total %>% 
@@ -164,7 +168,7 @@ ggplot(data=callcat_calf, aes(x=calf_presence,y=number,fill=call_category)) +
   theme_classic() +
   labs(x="Calf presence", y="Number", fill="Call category") +
   scale_y_continuous(expand=c(0,0)) +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
 
 #tide
 callcat_tide <- callcat_total %>% 
@@ -176,7 +180,7 @@ ggplot(data=callcat_tide, aes(x=tide,y=number,fill=call_category)) +
   theme_classic() +
   labs(x="Tide", y="Number", fill="Call category") +
   scale_y_continuous(expand=c(0,0)) +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
 
 #group size
 callcat_groupsize <- callcat_total %>% 
@@ -189,7 +193,7 @@ ggplot(data=callcat_groupsize, aes(x=group_size,y=number,fill=call_category)) +
   labs(x="Group size", y="Count", fill="Call category") +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=5)) +
   scale_y_continuous(expand=c(0,0)) +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
 
 
 ## violin plots of call category by categorical variables by group size
@@ -200,7 +204,7 @@ callcat_total %>%
   theme_classic() +
   labs(x="Behavior", y="Group size", fill="Call category") +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
 
 #call category by calf presence
 callcat_total %>%
@@ -209,7 +213,7 @@ callcat_total %>%
   theme_classic() +
   labs(x="Calf presence", y="Group size", fill="Call category") +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
 
 #call category by tide
 callcat_total %>%
@@ -218,7 +222,7 @@ callcat_total %>%
   theme_classic() +
   labs(x="Tidal state", y="Group size", fill="Call category") +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_fill_manual(values=pal)
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
 
 
 
@@ -227,7 +231,6 @@ callcat_total %>%
 
 #default levels are cc,pc,ws
 levels(callcat_total$call_category)
-
 
 #relevel so ws is level 0 (reference level)
 callcat_total$call_category <- relevel(callcat_total$call_category,ref = "ws")
@@ -360,7 +363,6 @@ model_summ <- data.frame(variable=c("CC-Behavior [travel]","CC-Group size","CC-T
    mutate(variable=as.factor(variable))
 
 #relevel so cc is first
-pal <- c("red","deepskyblue4")
 model_summ %>% 
   mutate(variable=fct_relevel(variable,"CC-Behavior [travel]","CC-Group size","CC-Tide [flood]", 
                               "PC-Behavior [travel]","PC-Calf presence [yes]","PC-Group size","PC-Tide [flood]")) %>% 
@@ -371,7 +373,7 @@ ggplot(aes(x=coefficient, y=variable, color=sig)) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  scale_color_manual(values=pal)
+  scale_color_manual(values=c("red","deepskyblue4"))
 
 
 
@@ -384,7 +386,6 @@ cc_summ <- data.frame(variable=c("Behavior","Group size","Tide"),
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red3","deepskyblue4")
 ggplot(data=cc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
   geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
@@ -393,7 +394,7 @@ ggplot(data=cc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
   theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=pal)
+  scale_color_manual(values=c("red3","deepskyblue4"))
 
 
 ###pc only
@@ -405,7 +406,6 @@ pc_summ <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide")
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red3","deepskyblue4")
 ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
   geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
@@ -414,11 +414,10 @@ ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
   theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=pal)
+  scale_color_manual(values=c("red3","deepskyblue4"))
 
 
 #####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
-
 ###Combined calls
 #behavior (travel)
 (exp(-2.469)-1)*100
@@ -444,7 +443,6 @@ ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
 (exp(-0.978)-1)*100
 
 
-
 #### Model-diagnostics
 #examining residuals
 E <- residuals(mn4)
@@ -464,10 +462,48 @@ plot(callcat_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 
-### Predictions (1=ws, 2=cc, 3=pc)    
-preds <- predict(mn4, type="response")
-head(preds)
-boxplot(preds, type="response")
+####### Predictions (1=ws, 2=cc, 3=pc)    
+p <- predictions(mn4)
+
+#average predictions takes average of all predicted values in full dataset
+#behavior
+avg_predictions(mn4,by="behavior",type="response")
+
+plot_predictions(mn4,by="behavior",vcov=TRUE) +
+  facet_wrap(~group) +
+  theme_classic() +
+  labs(x="Behavior", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=14)) +
+  theme(axis.title = element_text(size=12),
+        panel.spacing = unit(0.01,'cm'),
+        strip.background = element_rect(color="gray20"),
+        plot.margin = margin(10,15,10,10))
+
+#calf presence
+avg_predictions(mn4,by="calf_presence",type="response")
+
+plot_predictions(mn4,by="calf_presence",vcov=TRUE)+
+  facet_wrap(~group) +
+  theme_classic() +
+  labs(x="Calf presence", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=14)) +
+  theme(axis.title = element_text(size=12),
+        panel.spacing = unit(0.01,'cm'),
+        strip.background = element_rect(color="gray20"),
+        plot.margin = margin(10,15,10,10))
+
+  
+#combined
+plot_predictions(mn4,by=c("behavior","calf_presence"),vcov=TRUE) +
+  facet_wrap(~group) +
+  theme_classic() +
+  labs(x="Behavior", y="Predicted probability") +
+  scale_color_manual(values=c("goldenrod3","darkgreen"))+
+  theme(text=element_text(family="serif", size=14)) +
+  theme(axis.title = element_text(size=12),
+        panel.spacing = unit(0.01,'cm'),
+        strip.background = element_rect(color="gray20"),
+        plot.margin = margin(10,15,10,10))
 
 
 

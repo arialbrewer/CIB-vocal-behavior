@@ -10,7 +10,10 @@ library(parameters)
 library(DHARMa)
 library(glmmTMB)
 library(bbmle) 
+library(viridis)
 library(lmtest)
+library(performance)
+library(marginaleffects)
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -87,8 +90,7 @@ tide_type <- callrate_total %>%
   arrange(perc) %>%
   mutate(labels = scales::percent(perc))
 
-pal <- c("gold2","darkseagreen","cyan4")
-pal2 <- c("gold2","cyan4")
+
 
 ###independent variables
 #behavior distribution
@@ -99,7 +101,7 @@ ggplot(data=behavior_type, aes(x="", y=number,fill=behavior)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_manual(values=pal2)
+  scale_fill_manual(values=c("gold2","cyan4"))
 
 #calf distribution
 ggplot(data=calf_type, aes(x="", y=number,fill=calf_presence)) +
@@ -109,7 +111,7 @@ ggplot(data=calf_type, aes(x="", y=number,fill=calf_presence)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_manual(values=pal2)
+  scale_fill_manual(values=c("gold2","cyan4"))
 
 #tide distribution
 ggplot(data=tide_type, aes(x="", y=number,fill=tide)) +
@@ -119,7 +121,7 @@ ggplot(data=tide_type, aes(x="", y=number,fill=tide)) +
   geom_label(aes(label = labels), 
              position = position_stack(vjust = 0.5),
              show.legend = FALSE) +
-  scale_fill_manual(values=pal2)
+  scale_fill_manual(values=c("gold2","cyan4"))
 
 #group size
 ggplot(data=callrate_total, aes(x=group_size)) +
@@ -223,7 +225,7 @@ p1 <- callrate_total %>%
   ggplot(aes(x=behavior, y=n_minute, fill=behavior)) +
   geom_violin(show.legend = FALSE) +
   theme_classic() +
-  scale_fill_manual(values=pal2) +
+  scale_fill_manual(values=c("gold2","cyan4")) +
   labs(x="Behavior", y="Calling rate (# calls/minute)") +
   ggtitle("All")
 
@@ -231,7 +233,7 @@ p2 <- callrate_total %>%
   ggplot(aes(x=behavior, y=n_minute, fill=behavior)) +
   geom_violin(show.legend = FALSE) +
   theme_classic() +
-  scale_fill_manual(values=pal2) +
+  scale_fill_manual(values=c("gold2","cyan4")) +
   scale_y_continuous(expand=c(0,0)) +
   labs(x="Behavior", y="Calling rate (# calls/minute)") +
   ggtitle("Non-zeros") +
@@ -244,7 +246,7 @@ p3 <- callrate_total %>%
   ggplot(aes(x=calf_presence, y=n_minute, fill=calf_presence)) +
   geom_violin(show.legend = FALSE) +
   theme_classic() +
-  scale_fill_manual(values=pal2) +
+  scale_fill_manual(values=c("gold2","cyan4")) +
   labs(x="Calf presence", y="Calling rate (# calls/minute)") +
   ggtitle("All")
 
@@ -252,7 +254,7 @@ p4 <- callrate_total %>%
   ggplot(aes(x=calf_presence, y=n_minute, fill=calf_presence)) +
   geom_violin(show.legend = FALSE) +
   theme_classic() +
-  scale_fill_manual(values=pal2) +
+  scale_fill_manual(values=c("gold2","cyan4")) +
   labs(x="Calf presence", y="Calling rate (# calls/minute)") +
   ggtitle("Non-zeros") +
   ylim(1,64)
@@ -264,7 +266,7 @@ p5 <- callrate_total %>%
   ggplot(aes(x=tide, y=n_minute, fill=tide)) +
   geom_violin(show.legend = FALSE) +
   theme_classic() +
-  scale_fill_manual(values=pal2) +
+  scale_fill_manual(values=c("gold2","cyan4")) +
   labs(x="Tidal state", y="Calling rate (# calls/minute)") +
   ggtitle("All")
 
@@ -272,7 +274,7 @@ p6 <- callrate_total %>%
   ggplot(aes(x=tide, y=n_minute, fill=tide)) +
   geom_violin(show.legend = FALSE) +
   theme_classic() +
-  scale_fill_manual(values=pal2) +
+  scale_fill_manual(values=c("gold2","cyan4")) +
   labs(x="Tidal state", y="Calling rate (# calls/minute)") +
   ggtitle("Non-zeros") +
   ylim(1,64)
@@ -296,23 +298,6 @@ ggplot(groupsize_mean, aes(x=group_size, y=mean_callrate))+
   labs(x="Group size", y="Mean calling rate")
 
 
-#mean total and relative calling rates by variable
-stats.behavior <- callrate_total %>% 
-  group_by(behavior) %>% 
-  summarise(total_mean=mean(n_minute),total_sd=sd(n_minute))
-            #relative_mean=mean(n_minute_group),relative_sd=sd(n_minute_group)) 
-
-stats.calf <- callrate_total %>% 
-  group_by(calf_presence) %>% 
-  summarise(total_mean=mean(n_minute),total_sd=sd(n_minute))
-            #relative_mean=mean(n_minute_group),relative_sd=sd(n_minute_group)) 
-
-stats.tide <- callrate_total %>% 
-  group_by(tide) %>% 
-  summarise(total_mean=mean(n_minute),total_sd=sd(n_minute))
-            #relative_mean=mean(n_minute_group),relative_sd=sd(n_minute_group)) 
-
-
 #how many zeros are present vs. non-zeros- data very zero-inflated
 table(callrate_total$n_minute)
 sum(callrate_total$n_minute>0)
@@ -333,7 +318,7 @@ levels(callrate_total$tide)
 callrate_total$tide <- relevel(callrate_total$tide,ref = "Ebb")
 levels(callrate_total$tide) 
 
-#Poisson
+###Poisson
 hur.pois<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
                   ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
                   family=truncated_poisson, data=callrate_total)
@@ -354,7 +339,13 @@ pchisq(X2, df,lower.tail = FALSE)
 #reject null- model not a good fit
 
 
-#negative binomial
+###negative binomial
+#with log around group size to see coefficient
+glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
+                ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
+                family=truncated_nbinom2, data=callrate_total)
+
+#nb model
 hur.nb<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
              ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total)
@@ -384,7 +375,6 @@ hurdle1 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide")
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red3","deepskyblue4")
 ggplot(data=hurdle1,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
   geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
@@ -393,7 +383,7 @@ ggplot(data=hurdle1,aes(x=coefficient, y=rev(variable), color=sig)) +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
   theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=pal)
+  scale_color_manual(values=c("red3","deepskyblue4"))
 
 
 
@@ -406,7 +396,6 @@ hurdle2 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide")
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red3","deepskyblue4")
 ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
   geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
@@ -415,7 +404,7 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
   theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=pal)
+  scale_color_manual(values=c("red3","deepskyblue4"))
 
 
 
@@ -447,6 +436,7 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 (exp(1.408)-1)*100
 
 
+
 ## Model diagnostics
 #examining residuals    
 E <- residuals(hur.nb)
@@ -467,7 +457,36 @@ plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 
-#######################test for binomial (Hurdle part 1) to see which is reference (0 or 1)
+########## Predictions of second part of hurdle
+#group size
+avg_predictions(hur.nb,by="group_size",type="response")
+
+plot_predictions(hur.nb,by="group_size",vcov=TRUE) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=14)) 
+
+#tide
+avg_predictions(hur.nb,by="tide",type="response")
+
+plot_predictions(hur.nb,by="tide",vcov=TRUE) +
+  theme_classic() +
+  labs(x="Tide", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=14)) 
+
+#both predictors
+plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_color_manual(values=c("orange","darkgreen")) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,150,by=20)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) 
+
+
+
+#######################Splitting hurdle components separately to test
+##binomial (Hurdle part 1) to see which is reference (0 or 1)
 #add new column to create 0 and 1
 callrate_total$n_minute2 <- as.numeric(callrate_total$n_minute)
 
@@ -489,22 +508,22 @@ callrate_total$n_minute2 <- relevel(callrate_total$n_minute2,ref = "0")
 levels(callrate_total$n_minute2)
 
 #test model with just a binomial for first part of hurdle
-test<-glmmTMB(n_minute2 ~ behavior + calf_presence + group_size + tide + (1|encounter),
+zi.hur<-glmmTMB(n_minute2 ~ behavior + calf_presence + group_size + tide + (1|encounter),
                  family=binomial(link="logit"), data=callrate_total)
 
-summary(test)
-plot(parameters(test))
+summary(zi.hur)
+plot(parameters(zi.hur))
 
 ##this is the opposite of what we see in glmmTMB hurdle. So for hurdle model,
 ##it is modeling the probability that they are not calling with a reference of calling
 
 
 #calculate 95% CI
-confint(test)
+confint(zi.hur)
 
 ###plot coefficients and CI
 #zero-inflation (first part of hurdle- binomial)
-test <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
+zi.hur.data <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
                       coefficient=c(0.804,0.768,0.088,-0.157),
                       lower=c(0.313,-0.048,0.053,-2.314),
                       upper=c(1.294,1.583,0.123,2.001),
@@ -512,8 +531,7 @@ test <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
   mutate(variable=as.factor(variable))
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
-pal <- c("red3","deepskyblue4")
-ggplot(data=test,aes(x=coefficient, y=rev(variable), color=sig)) +
+ggplot(data=zi.hur.data,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
   geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
   geom_vline(xintercept=0,lty=2,lwd=0.5) +
@@ -521,7 +539,7 @@ ggplot(data=test,aes(x=coefficient, y=rev(variable), color=sig)) +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
   theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=pal)
+  scale_color_manual(values=c("red3","deepskyblue4"))
 
 
 #####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
@@ -539,54 +557,81 @@ ggplot(data=test,aes(x=coefficient, y=rev(variable), color=sig)) +
 (exp(-0.157)-1)*100
 
 
+########## Predictions of significant variables
+plot_predictions(zi.hur, by=c("behavior"),vcov=TRUE)
+plot_predictions(zi.hur, by=c("group_size"),vcov=TRUE)
+
+#both predictors
+plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_color_manual(values=c("red3","blue4")) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
 
-###### Predictions
-library(ggeffects)
-#predictions by all variables
-pred <- predict_response(hur.nb,terms=c("behavior","calf_presence","group_size","tide"))
-print(pred,collapse_ci=TRUE)
-plot(pred)
 
 
-###Sarah recommends this way
-#set up new prediction dataframe
-# newData <- expand.grid(behavior=c("mill","travel"),calf_presence=c("no","yes"),group_size=c(1:50))
-# 
-# pred <- predict(glmm.nb2,newData,type="response")
-# 
-# #number of bootstrap samples and set up to store the results 
-# boot.samps <- 500 
-# pv <- matrix(NA,nrow=boot.samps,ncol=nrow(newData))
-# #simulate from the model, update the model with new predictor 
-# for(j in 1:boot.samps){
-#   y <- unlist(simulate(glmm.nb2))
-#   b.mod <- update(glmm.nb2,y ~ .)
-#   #then predict from the updated model if the bootstrap sample converged 
-#   if(is.null(summary(b.mod)$optinfo$conv$lme4$messages)==TRUE){
-#     RE.sd <- as.data.frame(VarCorr(b.mod))$sdcor[1]
-#     pv[j,] <- (1/(1+exp(-predict(b.mod, re.form = ~0, newData) + rnorm(1,0,sd=RE.sd))))
-#   }
-# }
-# pv.mean <- apply(pv,2,function(x)mean(x,na.rm=TRUE))
-# pv.lowr <- apply(pv,2,function(x)quantile(x,p=0.025,na.rm=TRUE))
-# pv.uppr <- apply(pv,2,function(x)quantile(x,p=0.975,na.rm=TRUE))
-# 
-# 
-# 
-# #Plot predictions 
-# all.plot <- data.frame(newData[c(1:3),],pv.mean[c(1:3)],pv.lowr[c(1:3)],pv.uppr[c(1:3)],
-#                        newData[c(4:6),],pv.mean[c(4:6)],pv.lowr[c(4:6)],pv.uppr[c(4:6)],
-#                        newData[c(7:9),],pv.mean[c(7:9)],pv.lowr[c(7:9)],pv.uppr[c(7:9)],
-#                        newData[c(10:12),],pv.mean[c(10:12)],pv.lowr[c(10:12)],pv.uppr[c(10:12)],
-#                        newData[c(13:15),],pv.mean[c(13:15)],pv.lowr[c(13:15)],pv.uppr[c(13:15)],
-#                        newData[c(16:18),],pv.mean[c(16:18)],pv.lowr[c(16:18)],pv.uppr[c(16:18)])
-# colnames(all.plot) <- c("behavior1","calf1","group1","mean1","lwr1","uppr1",
-#                         "behavior2","calf2","group2","mean2","lwr2","uppr2",
-#                         "behavior3","calf3","group3","mean3","lwr3","uppr3",
-#                         "behavior4","calf4","group4","mean4","lwr4","uppr4",
-#                         "behavior5","calf5","group5","mean5","lwr5","uppr5",
-#                         "behavior6","calf6","group6","mean6","lwr6","uppr6")
+############## Truncated NB (calling rate>0 data)
+cond.hur <- callrate_total %>% 
+  filter(n_minute>0)
+
+###### Group size vs calling rate (#calls/minute) fit with line
+ggplot(cond.hur, aes(x=group_size, y=n_minute)) +
+  geom_point(alpha=0.2, size=3) +
+  theme_classic() +
+  geom_smooth(method="glm") +
+  labs(x="Group size",y="Calling rate (# calls/minute)") +
+  ggtitle("Calling rate fit with GLM") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,60,by=5)) +
+  scale_x_continuous(expand=c(0,0.9),breaks=seq(0,55,by=5)) 
+
+
+#check covariate levels
+levels(cond.hur$behavior)
+levels(cond.hur$calf_presence)
+levels(cond.hur$tide) 
+
+#tide is switched around from call cat model, set ebb as reference level
+cond.hur$tide <- relevel(cond.hur$tide,ref = "Ebb")
+levels(cond.hur$tide) 
+
+#poisson model
+cond.pois<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
+                    family=poisson(link="log"), data=cond.hur)
+
+summary(cond.pois)
+
+#check overdispersion
+check_overdispersion(cond.pois)
+mean(cond.hur$n_minute)
+var(cond.hur$n_minute)
+
+
+#negative binomial model
+cond.nb<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
+                 family=truncated_nbinom2,data=cond.hur)
+
+summary(cond.nb)
+
+AIC(cond.pois,cond.nb)
+
+
+
+########## Predictions of significant variables
+plot_predictions(cond.nb, by="tide",vcov=TRUE)
+plot_predictions(cond.nb, by=c("group_size"),vcov=TRUE)
+
+#both predictors
+plot_predictions(cond.nb,condition=c("group_size","tide"),vcov=TRUE) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=14)) +
+  scale_color_manual(values=c("red3","blue4")) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
+
+
 
 
 
