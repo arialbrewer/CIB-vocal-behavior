@@ -473,11 +473,11 @@ plot_predictions(mn4,by="behavior",vcov=TRUE) +
   facet_wrap(~group) +
   theme_classic() +
   labs(x="Behavior", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=14)) +
-  theme(axis.title = element_text(size=12),
-        panel.spacing = unit(0.01,'cm'),
-        strip.background = element_rect(color="gray20"),
-        plot.margin = margin(10,15,10,10))
+  theme(text=element_text(family="serif", size=18),
+        axis.text = element_text(size=18),
+        axis.ticks.length = unit(0.4,"cm"),
+        panel.spacing = unit(0.3,"cm"))
+        
 
 #calf presence
 avg_predictions(mn4,by="calf_presence",type="response")
@@ -486,11 +486,11 @@ plot_predictions(mn4,by="calf_presence",vcov=TRUE)+
   facet_wrap(~group) +
   theme_classic() +
   labs(x="Calf presence", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=14)) +
-  theme(axis.title = element_text(size=12),
-        panel.spacing = unit(0.01,'cm'),
-        strip.background = element_rect(color="gray20"),
-        plot.margin = margin(10,15,10,10))
+  theme(text=element_text(family="serif", size=18),
+        axis.text = element_text(size=18),
+        axis.ticks.length = unit(0.4,"cm"),
+        panel.spacing = unit(0.3,'cm'))
+
 
   
 #combined

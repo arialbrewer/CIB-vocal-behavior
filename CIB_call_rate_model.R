@@ -91,7 +91,6 @@ tide_type <- callrate_total %>%
   mutate(labels = scales::percent(perc))
 
 
-
 ###independent variables
 #behavior distribution
 ggplot(data=behavior_type, aes(x="", y=number,fill=behavior)) +
@@ -140,32 +139,6 @@ ggplot(data=callrate_total, aes(x=n_minute)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
   labs(x="Total call rate (#calls/minute)",y="Count") 
 
-#Call rate without zeros to see shape
-#nonzeros_total<-callrate_total[callrate_total$n_minute>0,]
-# #ggplot(data=nonzeros_total, aes(x=n_minute)) +
-#   geom_histogram(bins=50, fill="cyan4",color="grey",alpha=0.9) +
-#   theme_classic() +
-#   scale_y_continuous(expand=c(0,0)) +
-#   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
-#   labs(x="Total call rate (#calls/minute)",y="Count") 
-
-# Per capital call rate
-# ggplot(data=callrate_total, aes(x=n_minute_group)) +
-#   geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
-#   theme_classic() +
-#   scale_y_continuous(expand=c(0,0)) +
-#   scale_x_continuous(expand=c(0,0),breaks=seq(0,6,by=1)) +
-#   labs(x="Per capita call rate (#calls/minute/whale)",y="Count")
-
-#Per capita call rate without zeros to see shape
-# nonzeros_relative<-callrate_total[callrate_total$n_minute_group>0,]
-# ggplot(data=nonzeros_relative, aes(x=n_minute_group)) +
-#   geom_histogram(bins=50,fill="turquoise4",color="grey",alpha=0.9) +
-#   theme_classic() +
-#   scale_y_continuous(expand=c(0,0)) +
-#   scale_x_continuous(expand=c(0,0),breaks=seq(0,6,by=1)) +
-#   labs(x="Per capita call rate (#calls/minute/whale)",y="Count")
-
 
 ###### Group size vs calling rate (#calls/minute) fit with line
 ggplot(callrate_total, aes(x=group_size, y=n_minute)) +
@@ -178,22 +151,11 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute)) +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
   scale_x_continuous(breaks=seq(0,60,by=5)) 
 
-###### Group size vs per capita calling rate (#calls/minute/whale)
-# #ggplot(callrate_total, aes(x=group_size, y=n_minute_group)) +
-#   geom_point(alpha=0.2, size=3) +
-#   theme_classic() +
-#   geom_smooth(method="glm") +
-#   labs(x="Group size",y="Calling rate (# calls/minute/whale)") +
-#   ggtitle("Per capita calling rate") +
-#   theme(plot.title=element_text(hjust=0.5)) +
-#   scale_y_continuous(breaks=seq(0,6,by=1)) +
-#   scale_x_continuous(breaks=seq(0,60,by=5)) 
-
 
 ##### Group size vs calling rate by variable
 #behavior
 ggplot(callrate_total, aes(x=group_size, y=n_minute, color=behavior)) +
-  geom_point(size=2) +
+  geom_point(position=size=2) +
   theme_classic() +
   scale_color_viridis(discrete=T,begin=0.3,end=0.8) +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
@@ -211,7 +173,7 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute, color=calf_presence)) +
 
 #tide
 ggplot(callrate_total, aes(x=group_size, y=n_minute, color=tide)) +
-  geom_point(size=2) +
+  geom_point(position="jitter",alpha=0.5,size=2) +
   theme_classic() +
   scale_color_viridis(discrete=T,begin=0.3,end=0.8) +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
@@ -340,12 +302,6 @@ pchisq(X2, df,lower.tail = FALSE)
 
 
 ###negative binomial
-#with log around group size to see coefficient
-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
-                ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
-                family=truncated_nbinom2, data=callrate_total)
-
-#nb model
 hur.nb<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
              ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total)
@@ -464,7 +420,7 @@ avg_predictions(hur.nb,by="group_size",type="response")
 plot_predictions(hur.nb,by="group_size",vcov=TRUE) +
   theme_classic() +
   labs(x="Group size", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=14)) 
+  theme(text=element_text(family="serif", size=18)) 
 
 #tide
 avg_predictions(hur.nb,by="tide",type="response")
@@ -472,16 +428,22 @@ avg_predictions(hur.nb,by="tide",type="response")
 plot_predictions(hur.nb,by="tide",vcov=TRUE) +
   theme_classic() +
   labs(x="Tide", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=14)) 
+  theme(text=element_text(family="serif", size=18),
+        axis.text = element_text(size=16),
+        axis.ticks.length = unit(0.3,"cm"))
 
 #both predictors
 plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE) +
   theme_classic() +
   labs(x="Group size", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=c("orange","darkgreen")) +
+  theme(text=element_text(family="sans", size=18),
+        axis.text = element_text(size=18),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_color_manual(values=c("hotpink4","grey30")) +
+  scale_fill_manual(values=c("hotpink4","grey30")) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,150,by=20)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) 
+
 
 
 
@@ -565,9 +527,15 @@ plot_predictions(zi.hur, by=c("group_size"),vcov=TRUE)
 plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE) +
   theme_classic() +
   labs(x="Group size", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=c("red3","blue4")) +
+  theme(text=element_text(family="serif", size=18),
+        axis.text = element_text(size=18),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_color_manual(values=c("red3","blue3")) +
+  scale_fill_manual(values=c("red","deepskyblue")) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
+
+
+
 
 
 
@@ -621,7 +589,7 @@ AIC(cond.pois,cond.nb)
 
 ########## Predictions of significant variables
 plot_predictions(cond.nb, by="tide",vcov=TRUE)
-plot_predictions(cond.nb, by=c("group_size"),vcov=TRUE)
+plot_predictions(cond.nb, condition=c("group_size"),vcov=TRUE)
 
 #both predictors
 plot_predictions(cond.nb,condition=c("group_size","tide"),vcov=TRUE) +

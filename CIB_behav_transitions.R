@@ -291,7 +291,6 @@ mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>%
                           "pulse.mod","pulse.mod.seg","pulse.n","rws","trill","uws"))
                       
 #plot
-pal1 <- c("darkslategray4","honeydew3")
 ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE,point_alpha=1,point_shape=21) +
   geom_point(data=subset(mill.travel_ridge, encounter %in% c(3) & call_type %in% c("dws","flatws")),aes(),shape=21,size=2) +
@@ -300,8 +299,10 @@ ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   geom_vline(xintercept=0, size=0.7,lty=2) +
   labs(x="Time", y="Call type") +
   ggtitle("Milling to traveling") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_fill_manual(values=pal1) +
+  theme(text=element_text(family="serif", size=18),
+        axis.text = element_text(size=16),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_fill_manual(values=c("lightsteelblue4","honeydew3")) +
   scale_x_continuous(breaks=seq(-20,5,by=5))
 
 
@@ -321,7 +322,6 @@ travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>%
   "pulse.flat","pulse.flat.seg","pulse.mod"))
 
 #plot
-pal2 <- c("honeydew3","salmon")
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE,point_alpha=1,point_shape=21) +
   geom_point(data=subset(travel.mill_ridge, encounter %in% c(7) & call_type %in% c("dws")),aes(),shape=21,size=2) +
@@ -329,7 +329,9 @@ ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   geom_vline(xintercept=0, size=0.7,lty=2) +
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_fill_manual(values=pal2)
+  theme(text=element_text(family="serif", size=18),
+        axis.text = element_text(size=16),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_fill_manual(values=c("honeydew3","salmon"))
 
 
