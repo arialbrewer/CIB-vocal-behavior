@@ -468,33 +468,35 @@ p <- predictions(mn4)
 #average predictions takes average of all predicted values in full dataset
 #behavior
 avg_predictions(mn4,by="behavior",type="response")
+avg_predictions(mn4,condition="behavior",type="response")
 
-plot_predictions(mn4,by="behavior",vcov=TRUE) +
+plot_predictions(mn4,condition="behavior",vcov=TRUE) +
   facet_wrap(~group) +
   theme_classic() +
-  labs(x="Behavior", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=18),
-        axis.text = element_text(size=18),
-        axis.ticks.length = unit(0.4,"cm"),
-        panel.spacing = unit(0.3,"cm"))
+  labs(x="Behavior", y="Predicted probability") 
+  #theme(text=element_text(family="serif", size=18),
+  #       axis.text = element_text(size=18),
+  #       axis.ticks.length = unit(0.4,"cm"),
+  #       panel.spacing = unit(0.3,"cm"))
         
 
 #calf presence
 avg_predictions(mn4,by="calf_presence",type="response")
+avg_predictions(mn4,condition="calf_presence",type="response")
 
-plot_predictions(mn4,by="calf_presence",vcov=TRUE)+
+plot_predictions(mn4,condition="calf_presence",vcov=TRUE)+
   facet_wrap(~group) +
   theme_classic() +
-  labs(x="Calf presence", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=18),
-        axis.text = element_text(size=18),
-        axis.ticks.length = unit(0.4,"cm"),
-        panel.spacing = unit(0.3,'cm'))
+  labs(x="Calf presence", y="Predicted probability") 
+  # theme(text=element_text(family="serif", size=18),
+  #       axis.text = element_text(size=18),
+  #       axis.ticks.length = unit(0.4,"cm"),
+  #       panel.spacing = unit(0.3,'cm'))
 
 
   
 #combined
-plot_predictions(mn4,by=c("behavior","calf_presence"),vcov=TRUE) +
+plot_predictions(mn4,condition=c("behavior","calf_presence"),vcov=TRUE) +
   facet_wrap(~group) +
   theme_classic() +
   labs(x="Behavior", y="Predicted probability") +

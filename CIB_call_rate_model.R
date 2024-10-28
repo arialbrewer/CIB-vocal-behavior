@@ -155,7 +155,7 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute)) +
 ##### Group size vs calling rate by variable
 #behavior
 ggplot(callrate_total, aes(x=group_size, y=n_minute, color=behavior)) +
-  geom_point(position=size=2) +
+  geom_point(position="jitter",alpha=0.5,size=2) +
   theme_classic() +
   scale_color_viridis(discrete=T,begin=0.3,end=0.8) +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
@@ -164,7 +164,7 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute, color=behavior)) +
 
 #calf presence
 ggplot(callrate_total, aes(x=group_size, y=n_minute, color=calf_presence)) +
-  geom_point(size=2) +
+  geom_point(position="jitter",alpha=0.5,size=2) +
   theme_classic() +
   scale_color_viridis(discrete=T,begin=0.3,end=0.8) +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
@@ -270,7 +270,8 @@ mean(callrate_total$n_minute)
 var(callrate_total$n_minute)
 
 
-################### Model building- Hurdle model
+
+################################### Model building- Hurdle model
 #check covariate levels
 levels(callrate_total$behavior)
 levels(callrate_total$calf_presence)
@@ -411,38 +412,39 @@ plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
 plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
-
-
-########## Predictions of second part of hurdle
+########## Predictions of sig. covariates (2nd part of hurdle only)
 #group size
 avg_predictions(hur.nb,by="group_size",type="response")
+avg_predictions(hur.nb,condition="group_size",type="response")
 
-plot_predictions(hur.nb,by="group_size",vcov=TRUE) +
+plot_predictions(hur.nb,condition="group_size",vcov=TRUE) +
   theme_classic() +
-  labs(x="Group size", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=18)) 
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  scale_y_continuous(breaks=seq(0,40,by=10)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=5)) 
 
 #tide
 avg_predictions(hur.nb,by="tide",type="response")
+avg_predictions(hur.nb,condition="tide",type="response")
 
-plot_predictions(hur.nb,by="tide",vcov=TRUE) +
+plot_predictions(hur.nb,condition="tide",vcov=TRUE) +
   theme_classic() +
-  labs(x="Tide", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=18),
-        axis.text = element_text(size=16),
-        axis.ticks.length = unit(0.3,"cm"))
+  labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
+
 
 #both predictors
 plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE) +
   theme_classic() +
-  labs(x="Group size", y="Predicted probability") +
-  theme(text=element_text(family="sans", size=18),
-        axis.text = element_text(size=18),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("hotpink4","grey30")) +
-  scale_fill_manual(values=c("hotpink4","grey30")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,150,by=20)) +
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  #theme(text=element_text(family="sans", size=16),
+  #       axis.text = element_text(size=14),
+  #       axis.ticks.length = unit(0.4,"cm")) +
+  #scale_color_manual(values=c("hotpink4","grey30")) +
+  #scale_fill_manual(values=c("hotpink4","grey30")) +
+  scale_y_continuous(breaks=seq(0,150,by=25)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) 
+
+
 
 
 
@@ -520,27 +522,40 @@ ggplot(data=zi.hur.data,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 
 ########## Predictions of significant variables
-plot_predictions(zi.hur, by=c("behavior"),vcov=TRUE)
-plot_predictions(zi.hur, by=c("group_size"),vcov=TRUE)
+#behavior
+avg_predictions(zi.hur, by="behavior",vcov=TRUE) 
+avg_predictions(zi.hur, condition="behavior",vcov=TRUE) 
+
+plot_predictions(zi.hur, condition="behavior",vcov=TRUE) +
+  theme_classic() +
+  labs(x="Behavior", y="Predicted probability of calling") 
+
+#group size 
+avg_predictions(zi.hur,by="group_size",type="response")
+avg_predictions(zi.hur,condition="group_size",type="response")
+
+plot_predictions(zi.hur, condition="group_size",vcov=TRUE) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted probability of calling") +
+  scale_y_continuous(breaks=seq(0,1,by=0.25)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
+
 
 #both predictors
 plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE) +
   theme_classic() +
-  labs(x="Group size", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=18),
-        axis.text = element_text(size=18),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("red3","blue3")) +
-  scale_fill_manual(values=c("red","deepskyblue")) +
+  labs(x="Group size", y="Predicted probability of calling") +
+  # theme(text=element_text(family="serif", size=18),
+  #       axis.text = element_text(size=18),
+  #       axis.ticks.length = unit(0.4,"cm")) +
+  # scale_color_manual(values=c("red3","blue3")) +
+  # scale_fill_manual(values=c("red","deepskyblue")) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
 
 
 
-
-
-
-############## Truncated NB (calling rate>0 data)
+############## Truncated NB (calling rate > 0 data)
 cond.hur <- callrate_total %>% 
   filter(n_minute>0)
 
@@ -588,18 +603,129 @@ AIC(cond.pois,cond.nb)
 
 
 ########## Predictions of significant variables
-plot_predictions(cond.nb, by="tide",vcov=TRUE)
-plot_predictions(cond.nb, condition=c("group_size"),vcov=TRUE)
+#group size
+avg_predictions(cond.nb,by="group_size",type="response")
+avg_predictions(cond.nb,condition="group_size",type="response")
+
+plot_predictions(cond.nb, condition="group_size",vcov=TRUE) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  scale_y_continuous(breaks=seq(0,35,by=10)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=5)) 
+
+
+#tide
+avg_predictions(cond.nb,by="tide",type="response")
+avg_predictions(cond.nb,condition="tide",type="response")
+
+plot_predictions(cond.nb, condition="tide",vcov=TRUE) +
+  theme_classic() +
+  labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
+
 
 #both predictors
 plot_predictions(cond.nb,condition=c("group_size","tide"),vcov=TRUE) +
   theme_classic() +
-  labs(x="Group size", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=c("red3","blue4")) +
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  scale_y_continuous(breaks=seq(0,150,by=25)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) 
+
+
+
+
+
+##################################### check tide states separately 
+
+#####ebb
+ebb <- callrate_total %>% 
+  filter(tide=="Ebb", n_minute>0)
+
+mean(ebb$n_minute)
+
+#Calling rate
+ggplot(data=ebb, aes(x=n_minute)) +
+  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
+  theme_classic() +
+  ggtitle("Ebbing tide") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
+  labs(x="Calling rate (#calls/minute)",y="Count") 
+
+#Calling rate with group size
+ggplot(ebb, aes(x=group_size, y=n_minute)) +
+  geom_point(size=2) +
+  theme_classic() +
+  ggtitle("Ebbing tide") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(x="Group size",y="Calling rate") +
+  scale_y_continuous(breaks=seq(0,60,by=10)) +
+  scale_x_continuous(breaks=seq(0,60,by=5))
+
+#truncated nb model
+ebb.m<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + (1|encounter),
+                family=truncated_nbinom2, data=ebb)
+
+summary(ebb.m)
+
+#predictions
+avg_predictions(ebb.m,by="tide",type="response")
+
+plot_predictions(ebb.m,by="tide",type="response",vcov=TRUE)
+
+plot_predictions(ebb.m,condition=c("group_size"),vcov=TRUE) +
+  theme_classic() +
+  ggtitle("Ebbing tide") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(x="Group size",y="Calling rate") +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
 
 
+#####flood
+flood <- callrate_total %>% 
+  filter(tide=="Flood", n_minute>0)
 
+mean(flood$n_minute)
 
+#Calling rate
+ggplot(data=flood, aes(x=n_minute)) +
+  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
+  theme_classic() +
+  ggtitle("Flooding tide") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
+  labs(x="Calling rate (#calls/minute)",y="Count") 
+
+#Calling rate with group size
+ggplot(flood, aes(x=group_size, y=n_minute)) +
+  geom_point(size=2) +
+  theme_classic() +
+  ggtitle("Flooding tide") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(x="Group size",y="Calling rate")
+
+#truncated nb model
+#had to remove calf from model because calf no doesn't occur when calls >0
+flood.m<-glmmTMB(n_minute ~ behavior + group_size + (1|encounter),
+                 family=truncated_nbinom2, data=flood)
+
+summary(flood.m)
+plot(parameters(flood.m))
+
+#predictions
+avg_predictions(flood.m,by="tide",vcov=TRUE)
+plot_predictions(flood.m,by="tide",type="response",vcov=TRUE)
+
+plot_predictions(flood.m,condition=c("group_size"),vcov=TRUE) +
+  theme_classic() +
+  ggtitle("Flooding tide") +
+  theme(plot.title=element_text(hjust=0.5)) +
+  labs(x="Group size",y="Calling rate") +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
+  
+  
+  
+  
+  
