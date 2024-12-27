@@ -1,13 +1,13 @@
 #Arial Brewer
-#PhD- Chapter 2 Vocal Behavior
-#Explore behavioral transitions with call types in 2021 data
+#PhD Chapter 2: CIB Vocal Behavior
+#Describe vocal activity during behavioral transitions
 
 #load packages
 library(tidyverse)
 library(ggridges)
 library(PNWColors)
 
-#read in data
+#read in data from 2021
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
 acoustic_files <- intersect(list.files(pattern = "ER21"),list.files(pattern="acoustic.csv"))
 behavior_files <- intersect(list.files(pattern = "ER21"),list.files(pattern="behavior.csv"))
@@ -68,7 +68,7 @@ ggplot(data=calltype_count, aes(x=number, y=reorder(call_type,number),fill=call_
   geom_col()+
   theme_classic()+
   labs(x="Number", y="Call type")+
-  scale_fill_manual(values=pal) +
+  scale_fill_manual(values=pal3) +
   scale_x_continuous(expand=c(0,0))
 
 
@@ -84,10 +84,8 @@ ggplot(data=calltype_count_behav, aes(x=number, y=reorder(call_type,number),fill
   geom_col()+
   theme_classic()+
   labs(x="Number", y="Call type")+
-  scale_fill_manual(values=pal) +
+  scale_fill_manual(values=pal3) +
   scale_x_continuous(expand=c(0,0))
-
-
 
 
 
@@ -246,19 +244,6 @@ ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=encount
   scale_color_manual(values=pnw_palette("Bay",n=2)) +
   facet_wrap(~call_type)
 
-#Line plot zoomed out
-ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=call_type)) + 
-  geom_line(linewidth=1) +
-  theme_classic() +
-  geom_vline(xintercept=0, size=0.5,lty=2) +
-  labs(x="Time", y="Count",fill="Call type") +
-  scale_y_continuous(expand=c(0,0)) +
-  #xlim(-15,5) +
-  ggtitle("Traveling to milling") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_color_manual(values=pnw_palette("Bay",n=12)) +
-  facet_wrap(~encounter)
-
 #ridgeline- doesn't remove call types with n=2 or 3
 ggplot(travel.mill, aes(x=t_index,y=reorder(call_type,desc(t_index)),height=num_calls,fill=encounter)) +
   geom_ridgeline(scale=0.5,alpha=0.7) +
@@ -290,7 +275,7 @@ mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>%
                           "modws.seg","nws","nws.seq","pulse.a","pulse.d","pulse.flat","pulse.flat.seg",
                           "pulse.mod","pulse.mod.seg","pulse.n","rws","trill","uws"))
                       
-#plot
+#plot with points
 ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE,point_alpha=1,point_shape=21) +
   geom_point(data=subset(mill.travel_ridge, encounter %in% c(3) & call_type %in% c("dws","flatws")),aes(),shape=21,size=2) +
@@ -299,12 +284,25 @@ ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   geom_vline(xintercept=0, size=0.7,lty=2) +
   labs(x="Time", y="Call type") +
   ggtitle("Milling to traveling") +
-  theme(text=element_text(family="serif", size=18),
+  theme(text=element_text(family="serif", size=16),
         axis.text = element_text(size=16),
         axis.ticks.length = unit(0.4,"cm")) +
   scale_fill_manual(values=c("lightsteelblue4","honeydew3")) +
   scale_x_continuous(breaks=seq(-20,5,by=5))
 
+#plot without points
+ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+  geom_density_ridges(scale=2,alpha=0.7) +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=0.7,lty=2) +
+  labs(x="Time", y="Call type") +
+  xlim(-20,5) +
+  ggtitle("Milling to traveling") +
+  theme(text=element_text(family="serif", size=16),
+        axis.text = element_text(size=16),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_fill_manual(values=c("lightsteelblue4","honeydew3")) +
+  scale_x_continuous(breaks=seq(-20,5,by=5))
 
 
 #### TRAVEL TO MILL
@@ -321,12 +319,26 @@ travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>%
   filter(call_type %in% c("aws","aws.seg","dws","flatws","flatws.seg","modws",
   "pulse.flat","pulse.flat.seg","pulse.mod"))
 
-#plot
+#plot with points
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE,point_alpha=1,point_shape=21) +
   geom_point(data=subset(travel.mill_ridge, encounter %in% c(7) & call_type %in% c("dws")),aes(),shape=21,size=2) +
   theme_ridges(grid=F) +
   geom_vline(xintercept=0, size=0.7,lty=2) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Traveling to milling") +
+  theme(text=element_text(family="serif", size=16),
+        axis.text = element_text(size=16),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_fill_manual(values=c("honeydew3","salmon"))
+
+
+#plot without points
+ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+  geom_density_ridges(scale=2,alpha=0.7) +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=0.7,lty=2) +
+  xlim(-20,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
   theme(text=element_text(family="serif", size=18),

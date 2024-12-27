@@ -87,7 +87,6 @@ callcat_type <- callcat_total %>%
   mutate(labels = scales::percent(perc))
 
 
-
 ###independent variables
 #behavior distribution
 ggplot(data=behavior_type, aes(x="", y=number,fill=behavior)) +
@@ -130,7 +129,7 @@ ggplot(data=callcat_total, aes(x=group_size)) +
 
 ###dependent variable
 #call category distribution
-cc.dist.plot <- ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
+ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
   geom_bar(stat='identity',width=1, color='white')+
   coord_polar("y",start=0)+
   theme_void() + 
@@ -138,12 +137,9 @@ cc.dist.plot <- ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)
              position = position_stack(vjust = 0.5),
              show.legend = F) +
   labs(fill="Call category") +
-  theme(text=element_text(family="serif", size=14),
-        panel.background = element_rect(fill='transparent'),
-        plot.background = element_rect(fill="transparent", color=NA)) +
+  theme(text=element_text(family="serif", size=12)) +
   scale_fill_manual(values=c("gold2","darkseagreen","cyan4")) 
 
-ggsave("cc_transparent_plot.png", cc.dist.plot, bg = "transparent") 
 
 ###summarize call categories by variables
 #behavior
@@ -193,35 +189,6 @@ ggplot(data=callcat_groupsize, aes(x=group_size,y=number,fill=call_category)) +
   labs(x="Group size", y="Count", fill="Call category") +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=5)) +
   scale_y_continuous(expand=c(0,0)) +
-  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
-
-
-## violin plots of call category by categorical variables by group size
-#call category by behavior
-callcat_total %>%
-  ggplot(aes(x=behavior, y=group_size, fill=call_category)) +
-  geom_violin() +
-  theme_classic() +
-  labs(x="Behavior", y="Group size", fill="Call category") +
-  scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
-
-#call category by calf presence
-callcat_total %>%
-  ggplot(aes(x=calf_presence, y=group_size, fill=call_category)) +
-  geom_violin() +
-  theme_classic() +
-  labs(x="Calf presence", y="Group size", fill="Call category") +
-  scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
-
-#call category by tide
-callcat_total %>%
-  ggplot(aes(x=tide, y=group_size, fill=call_category)) +
-  geom_violin() +
-  theme_classic() +
-  labs(x="Tidal state", y="Group size", fill="Call category") +
-  scale_y_continuous(breaks=seq(0,60,by=10)) +
   scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
 
 
@@ -317,6 +284,7 @@ AIC(mn2,mn3,mn4,mn15)
 #model summary
 summary(mn4)
 
+
 ##calculate 95% CI= (Coef +/- 1.96 * SE).
 #cc for behavior-travel
 -2.469e+00 + 1.96*5.634e-01
@@ -351,8 +319,7 @@ summary(mn4)
 -9.783e-01 - 1.96*1.339e+00
 
 
-#plot model coefficients and CI
-#without CC-calf presence because parameter is unidentifiable
+###plot model coefficients and CI (without CC-calf presence because parameter is unidentifiable)
 #create new dataframe with model coefficients and CI for cc and pc
 model_summ <- data.frame(variable=c("CC-Behavior [travel]","CC-Group size","CC-Tide [flood]", 
                                     "PC-Behavior [travel]","PC-Calf presence [yes]","PC-Group size","PC-Tide [flood]"),
@@ -376,7 +343,6 @@ ggplot(aes(x=coefficient, y=variable, color=sig)) +
   scale_color_manual(values=c("red","deepskyblue4"))
 
 
-
 ###cc only
 cc_summ <- data.frame(variable=c("Behavior","Group size","Tide"),
                          coefficient=c(-2.469,0.051,0.247),
@@ -393,7 +359,7 @@ ggplot(data=cc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="serif", size=14)) +
+  theme(text=element_text(family="serif", size=20)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
@@ -413,7 +379,7 @@ ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="serif", size=14)) +
+  theme(text=element_text(family="serif", size=20)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
@@ -463,40 +429,36 @@ plot(callcat_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 ####### Predictions (1=ws, 2=cc, 3=pc)    
-p <- predictions(mn4)
-
-#average predictions takes average of all predicted values in full dataset
-#behavior
+#Marginal effects package predictions
+#using "by" because GAM doesn't work well with "condition"
 avg_predictions(mn4,by="behavior",type="response")
-avg_predictions(mn4,condition="behavior",type="response")
 
-plot_predictions(mn4,condition="behavior",vcov=TRUE) +
+plot_predictions(mn4,by="behavior",vcov=TRUE) +
   facet_wrap(~group) +
   theme_classic() +
-  labs(x="Behavior", y="Predicted probability") 
-  #theme(text=element_text(family="serif", size=18),
-  #       axis.text = element_text(size=18),
-  #       axis.ticks.length = unit(0.4,"cm"),
-  #       panel.spacing = unit(0.3,"cm"))
+  labs(x="Behavior", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=20),
+        axis.ticks.length = unit(0.4,"cm"),
+        panel.spacing = unit(0.3,"cm"))
         
 
 #calf presence
 avg_predictions(mn4,by="calf_presence",type="response")
-avg_predictions(mn4,condition="calf_presence",type="response")
 
-plot_predictions(mn4,condition="calf_presence",vcov=TRUE)+
+plot_predictions(mn4,by="calf_presence",vcov=TRUE)+
   facet_wrap(~group) +
   theme_classic() +
-  labs(x="Calf presence", y="Predicted probability") 
-  # theme(text=element_text(family="serif", size=18),
-  #       axis.text = element_text(size=18),
-  #       axis.ticks.length = unit(0.4,"cm"),
-  #       panel.spacing = unit(0.3,'cm'))
+  labs(x="Calf presence", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=20),
+        axis.ticks.length = unit(0.4,"cm"),
+        panel.spacing = unit(0.3,'cm'))
 
 
   
 #combined
-plot_predictions(mn4,condition=c("behavior","calf_presence"),vcov=TRUE) +
+plot_predictions(mn4,by=c("behavior","calf_presence"),vcov=TRUE) +
   facet_wrap(~group) +
   theme_classic() +
   labs(x="Behavior", y="Predicted probability") +
@@ -506,6 +468,5 @@ plot_predictions(mn4,condition=c("behavior","calf_presence"),vcov=TRUE) +
         panel.spacing = unit(0.01,'cm'),
         strip.background = element_rect(color="gray20"),
         plot.margin = margin(10,15,10,10))
-
 
 
