@@ -12,7 +12,6 @@ library(glmmTMB)
 library(bbmle) 
 library(viridis)
 library(lmtest)
-library(performance)
 library(marginaleffects)
 
 #load data
@@ -547,7 +546,6 @@ plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE) +
 
 
 ###OTHER
-
 ##testing predictions with another package
 library(ggeffects)
 p <- predict_response(hur.nb,terms=c("group_size","tide"))
@@ -564,106 +562,3 @@ exp(0.11+0+0+0.04*53+1.4)
 
 
 
-
-##check tide states separately 
-#ebb
-ebb <- callrate_total %>% 
-  filter(tide=="Ebb", n_minute>0)
-
-mean(ebb$n_minute)
-
-#Calling rate
-ggplot(data=ebb, aes(x=n_minute)) +
-  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
-  theme_classic() +
-  ggtitle("Ebbing tide") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
-  labs(x="Calling rate (#calls/minute)",y="Count") 
-
-#Calling rate with group size
-ggplot(ebb, aes(x=group_size, y=n_minute)) +
-  geom_point(size=2) +
-  theme_classic() +
-  ggtitle("Ebbing tide") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(x="Group size",y="Calling rate") +
-  scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_x_continuous(breaks=seq(0,60,by=5))
-
-#truncated nb model with all covariates except tide
-ebb.m<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + (1|encounter),
-                family=truncated_nbinom2, data=ebb)
-
-#basic model with only group size
-ebb.m<-glmmTMB(n_minute ~ group_size + (1|encounter),
-               family=truncated_nbinom2, data=ebb)
-
-summary(ebb.m)
-
-#predictions
-avg_predictions(ebb.m,by="tide",type="response")
-
-plot_predictions(ebb.m,by="tide",type="response",vcov=TRUE)
-
-plot_predictions(ebb.m,condition=c("group_size"),vcov=TRUE) +
-  theme_classic() +
-  ggtitle("Ebbing tide") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(x="Group size",y="Calling rate") +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
-
-
-
-#flood
-flood <- callrate_total %>% 
-  filter(tide=="Flood", n_minute>0)
-
-mean(flood$n_minute)
-
-#Calling rate
-ggplot(data=flood, aes(x=n_minute)) +
-  geom_histogram(bins=50,fill="cyan4",color="grey",alpha=0.9) +
-  theme_classic() +
-  ggtitle("Flooding tide") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) +
-  labs(x="Calling rate (#calls/minute)",y="Count") 
-
-#Calling rate with group size
-ggplot(flood, aes(x=group_size, y=n_minute)) +
-  geom_point(size=2) +
-  theme_classic() +
-  ggtitle("Flooding tide") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(x="Group size",y="Calling rate")
-
-#truncated nb model with all covariates except tide and calf presence
-#had to remove calf from model because calf no doesn't occur when calls >0
-flood.m<-glmmTMB(n_minute ~ behavior + group_size + (1|encounter),
-                 family=truncated_nbinom2, data=flood)
-
-#just group size
-flood.m<-glmmTMB(n_minute ~ group_size + (1|encounter),
-                 family=truncated_nbinom2, data=flood)
-
-summary(flood.m)
-plot(parameters(flood.m))
-
-#predictions
-avg_predictions(flood.m,by="tide",vcov=TRUE)
-plot_predictions(flood.m,by="tide",type="response",vcov=TRUE)
-
-plot_predictions(flood.m,condition=c("group_size"),vcov=TRUE) +
-  theme_classic() +
-  ggtitle("Flooding tide") +
-  theme(plot.title=element_text(hjust=0.5)) +
-  labs(x="Group size",y="Calling rate") +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,50,by=5)) 
-  
-  
-  
-  
-  
