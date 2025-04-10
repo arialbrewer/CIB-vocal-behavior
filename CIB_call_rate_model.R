@@ -486,7 +486,8 @@ ggplot(data=zi.hur.data,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 
 
-################ Predictions of significant variables- Hurdle part 1
+
+################ Predictions- Hurdle part 1
 #behavior
 avg_predictions(zi.hur, condition="behavior",vcov=TRUE) 
 plot_predictions(zi.hur, condition="behavior",vcov=TRUE) +
@@ -501,7 +502,7 @@ plot_predictions(zi.hur, condition="group_size",vcov=TRUE) +
   scale_y_continuous(breaks=seq(0,1,by=0.25)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
-#both
+#both via plot_predictions
 plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE) +
   theme_classic() +
   labs(x="Group size", y="Predicted probability of calling") +
@@ -513,8 +514,24 @@ plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
 
+#both using predictions then put into ggplot for plot customization
+pred <- plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE, draw=FALSE)
 
-################ Predictions of significant variables- Hurdle part 2
+ggplot(pred, aes(x = group_size, color = behavior, fill = behavior)) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+  geom_line(aes(y = estimate), linewidth = 1) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted probability of calling") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=20),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_color_manual(values=c("red3","blue3")) +
+  scale_fill_manual(values=c("red","deepskyblue")) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
+
+
+
+################ Predictions- Hurdle part 2
 #group size
 avg_predictions(hur.nb,condition="group_size",type="response")
 plot_predictions(hur.nb,condition="group_size",vcov=TRUE) +
@@ -529,7 +546,7 @@ plot_predictions(hur.nb,condition="tide",vcov=TRUE) +
   theme_classic() +
   labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
 
-#both
+#both via plot_predictions
 plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE) +
   theme_classic() +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
@@ -539,7 +556,43 @@ plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE) +
   scale_color_manual(values=c("hotpink4","grey30")) +
   scale_fill_manual(values=c("hotpink4","grey30")) +
   scale_y_continuous(breaks=seq(0,150,by=25)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10)) 
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10))
+
+##use new data frame excluding regions of group size where we don't have data
+#Max group sizes: ebb=53, flood=24
+#first, create a new set of data to predict over
+new_data <- data.frame(tide = c(rep("Ebb",53), rep("Flood",24)),
+                          group_size = c(seq(1,53,1), seq(1,24,1)))
+
+#new_dataset$pred <- predict(hur.nb, new_dataset, type = "response")
+
+#predictions with new data
+new_pred <- plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE, 
+                         newdata = new_dataset, draw = FALSE)
+
+#restricting to group sizes data has
+new_pred <- new_pred %>% 
+  mutate(group_size = case_when(tide == "Flood" & group_size > 24 ~ 100, TRUE ~ group_size)) %>% 
+  filter(group_size < 54)
+
+#Plot new predictions
+ggplot(new_pred, aes(x = group_size, color = tide, fill = tide)) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+  geom_line(aes(y = estimate), linewidth = 1) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=20),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_color_manual(values=c("hotpink4","grey30")) +
+  scale_fill_manual(values=c("hotpink4","grey30")) +
+  scale_y_continuous(breaks=seq(0,60,by=10)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
+
+  #coord_cartesian(ylim = c(0,50))
+  #ylim(-5,50)
+
+
 
 
 
