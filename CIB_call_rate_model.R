@@ -279,7 +279,7 @@ levels(callrate_total$tide)
 callrate_total$tide <- relevel(callrate_total$tide,ref = "Ebb")
 levels(callrate_total$tide) 
 
-###Poisson
+###Poisson hurdle
 hur.pois<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
                   ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
                   family=truncated_poisson, data=callrate_total)
@@ -300,7 +300,7 @@ pchisq(X2, df,lower.tail = FALSE)
 #reject null- model not a good fit
 
 
-###negative binomial
+###negative binomial hurdle
 hur.nb<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
              ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total)
@@ -353,8 +353,8 @@ hurdle2 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide")
 #couldn't get behavior to be first so reversed order and will manually change level labels
 ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
-  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.7) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
@@ -461,8 +461,8 @@ zi.hur.data <- data.frame(variable=c("Behavior","Calf presence","Group size","Ti
 #couldn't get behavior to be first so reversed order and will manually change level labels
 ggplot(data=zi.hur.data,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
-  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.7) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
@@ -515,7 +515,7 @@ plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE) +
 
 
 #both using predictions then put into ggplot for plot customization
-pred <- plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE, draw=FALSE)
+pred1 <- plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE, draw=FALSE)
 
 ggplot(pred, aes(x = group_size, color = behavior, fill = behavior)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
@@ -558,17 +558,33 @@ plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE) +
   scale_y_continuous(breaks=seq(0,150,by=25)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10))
 
+
+#both using predictions then put into ggplot for plot customization
+pred2 <- plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE, draw=FALSE)
+
+ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+  geom_line(aes(y = estimate), linewidth = 1) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=20),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_color_manual(values=c("hotpink4","grey30")) +
+  scale_fill_manual(values=c("hotpink4","grey30")) +
+  scale_y_continuous(breaks=seq(0,150,by=25)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
+
+
 ##use new data frame excluding regions of group size where we don't have data
 #Max group sizes: ebb=53, flood=24
 #first, create a new set of data to predict over
 new_data <- data.frame(tide = c(rep("Ebb",53), rep("Flood",24)),
                           group_size = c(seq(1,53,1), seq(1,24,1)))
 
-#new_dataset$pred <- predict(hur.nb, new_dataset, type = "response")
-
 #predictions with new data
 new_pred <- plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE, 
-                         newdata = new_dataset, draw = FALSE)
+                         newdata = new_data, draw = FALSE)
 
 #restricting to group sizes data has
 new_pred <- new_pred %>% 
@@ -587,10 +603,10 @@ ggplot(new_pred, aes(x = group_size, color = tide, fill = tide)) +
   scale_color_manual(values=c("hotpink4","grey30")) +
   scale_fill_manual(values=c("hotpink4","grey30")) +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) +
+  coord_cartesian(ylim = c(0,50))
+  #ylim(-4,45)
 
-  #coord_cartesian(ylim = c(0,50))
-  #ylim(-5,50)
 
 
 

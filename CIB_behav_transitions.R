@@ -270,27 +270,27 @@ mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>%
          call_type=as.factor(call_type),
          call_category=as.factor(call_category)) %>% 
   na.omit() %>%
-  #keep call types n>1
+  #keep call types n>2 (ridgeplot can't create density with less than 3 calls/call type)
   filter(call_type %in% c("aws","c.10","c.13","c.9","dws","flatws","flatws.seg","modws","modws.m",
                           "modws.seg","nws","nws.seq","pulse.a","pulse.d","pulse.flat","pulse.flat.seg",
                           "pulse.mod","pulse.mod.seg","pulse.n","rws","trill","uws"))
                       
-#plot with points
-ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
-  geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE,point_alpha=1,point_shape=21) +
-  geom_point(data=subset(mill.travel_ridge, encounter %in% c(3) & call_type %in% c("dws","flatws")),aes(),shape=21,size=2) +
-  theme_ridges(grid=F) +
-  #theme(legend.position = "none") +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Milling to traveling") +
-  theme(text=element_text(family="serif", size=16),
-        axis.text = element_text(size=16),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_fill_manual(values=c("lightsteelblue4","honeydew3")) +
-  scale_x_continuous(breaks=seq(-20,5,by=5))
+# #plot with points
+# ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+#   geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE,point_alpha=1,point_shape=21) +
+#   geom_point(data=subset(mill.travel_ridge, encounter %in% c(3) & call_type %in% c("dws","flatws")),aes(),shape=21,size=2) +
+#   theme_ridges(grid=F) +
+#   #theme(legend.position = "none") +
+#   geom_vline(xintercept=0, size=0.7,lty=2) +
+#   labs(x="Time", y="Call type") +
+#   ggtitle("Milling to traveling") +
+#   theme(text=element_text(family="serif", size=16),
+#         axis.text = element_text(size=16),
+#         axis.ticks.length = unit(0.4,"cm")) +
+#   scale_fill_manual(values=c("lightsteelblue4","honeydew3")) +
+#   scale_x_continuous(breaks=seq(-20,5,by=5))
 
-#plot without points
+#plot
 ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
@@ -298,11 +298,12 @@ ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   labs(x="Time", y="Call type") +
   xlim(-20,5) +
   ggtitle("Milling to traveling") +
-  theme(text=element_text(family="serif", size=16),
-        axis.text = element_text(size=16),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_fill_manual(values=c("lightsteelblue4","honeydew3")) +
+  theme(text=element_text(family="serif", size=18),
+        axis.text = element_text(size=18),
+        axis.ticks.length = unit(0.3,"cm")) +
+  scale_fill_manual(values=c("lightsteelblue4")) +
   scale_x_continuous(breaks=seq(-20,5,by=5))
+
 
 
 #### TRAVEL TO MILL
@@ -315,25 +316,25 @@ travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>%
          call_category=as.factor(call_category))  %>% 
   na.omit() %>% 
   group_by(encounter) %>% 
-  #keep call types n>1
+  #keep call types n>2 (ridgeplot can't create density with less than 3 calls/call type)
   filter(call_type %in% c("aws","aws.seg","dws","flatws","flatws.seg","modws",
   "pulse.flat","pulse.flat.seg","pulse.mod"))
 
-#plot with points
-ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
-  geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE,point_alpha=1,point_shape=21) +
-  geom_point(data=subset(travel.mill_ridge, encounter %in% c(7) & call_type %in% c("dws")),aes(),shape=21,size=2) +
-  theme_ridges(grid=F) +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
-  labs(x="Time", y="Call type") +
-  ggtitle("Traveling to milling") +
-  theme(text=element_text(family="serif", size=16),
-        axis.text = element_text(size=16),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_fill_manual(values=c("honeydew3","salmon"))
+# #plot with points
+# ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
+#   geom_density_ridges(scale=2,alpha=0.7,jittered_points = TRUE,point_alpha=1,point_shape=21) +
+#   geom_point(data=subset(travel.mill_ridge, encounter %in% c(7) & call_type %in% c("dws")),aes(),shape=21,size=2) +
+#   theme_ridges(grid=F) +
+#   geom_vline(xintercept=0, size=0.7,lty=2) +
+#   labs(x="Time", y="Call type") +
+#   ggtitle("Traveling to milling") +
+#   theme(text=element_text(family="serif", size=16),
+#         axis.text = element_text(size=18),
+#         axis.ticks.length = unit(0.3,"cm")) +
+#   scale_fill_manual(values=c("honeydew3","salmon"))
 
 
-#plot without points
+#plot
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
@@ -342,8 +343,8 @@ ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
   theme(text=element_text(family="serif", size=18),
-        axis.text = element_text(size=16),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_fill_manual(values=c("honeydew3","salmon"))
+        axis.text = element_text(size=18),
+        axis.ticks.length = unit(0.3,"cm")) +
+  scale_fill_manual(values=c("honeydew3","salmon")) 
 
 

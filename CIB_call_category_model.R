@@ -133,11 +133,10 @@ ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
   geom_bar(stat='identity',width=1, color='white')+
   coord_polar("y",start=0)+
   theme_void() + 
-  geom_label(aes(label = labels), 
-             position = position_stack(vjust = 0.5),
-             show.legend = F) +
+  geom_label(aes(label = labels), size = 6,
+             position = position_stack(vjust = 0.5), show.legend = F) +
   labs(fill="Call category") +
-  theme(text=element_text(family="serif", size=12)) +
+  theme(text=element_text(family="serif", size=15)) +
   scale_fill_manual(values=c("gold2","darkseagreen","cyan4")) 
 
 
@@ -354,8 +353,8 @@ cc_summ <- data.frame(variable=c("Behavior","Group size","Tide"),
 #couldn't get behavior to be first so reversed order and will manually change level labels
 ggplot(data=cc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
-  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.7) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
@@ -374,8 +373,8 @@ pc_summ <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide")
 #couldn't get behavior to be first so reversed order and will manually change level labels
 ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   geom_point(size=3.5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
-  geom_vline(xintercept=0,lty=2,lwd=0.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.7) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
@@ -431,21 +430,40 @@ plot(callcat_total$tide, E, xlab="Tide", ylab="Residuals")
 ####### Predictions (1=ws, 2=cc, 3=pc)    
 #Marginal effects package predictions
 #using "by" because GAM doesn't work well with "condition"
+
+#behavior
 avg_predictions(mn4,by="behavior",type="response")
 
+#using plot predictions
 plot_predictions(mn4,by="behavior",vcov=TRUE) +
   facet_wrap(~group) +
   theme_classic() +
   labs(x="Behavior", y="Predicted probability") +
   theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
+        axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
         panel.spacing = unit(0.3,"cm"))
-        
+
+
+#using ggplot for customization
+pred.behav <- plot_predictions(mn4,by="behavior",vcov=TRUE,draw=FALSE)
+
+ggplot(pred.behav, aes(x = behavior)) +
+  facet_wrap(~group) +
+  geom_pointrange(aes(y=estimate,ymin=conf.low,ymax=conf.high),size=1,lwd=1) +
+  theme_classic() +
+  labs(x="Behavior", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=24),
+        axis.ticks.length = unit(0.4,"cm"),
+        panel.spacing = unit(0.3,"cm"))
+
+
 
 #calf presence
 avg_predictions(mn4,by="calf_presence",type="response")
 
+#using plot_predictions
 plot_predictions(mn4,by="calf_presence",vcov=TRUE)+
   facet_wrap(~group) +
   theme_classic() +
@@ -454,6 +472,20 @@ plot_predictions(mn4,by="calf_presence",vcov=TRUE)+
         axis.text = element_text(size=20),
         axis.ticks.length = unit(0.4,"cm"),
         panel.spacing = unit(0.3,'cm'))
+
+
+#using ggplot for customization
+pred.calf <- plot_predictions(mn4,by="calf_presence",vcov=TRUE,draw=FALSE)
+
+ggplot(pred.calf, aes(x = calf_presence)) +
+  facet_wrap(~group) +
+  geom_pointrange(aes(y=estimate,ymin=conf.low,ymax=conf.high),lwd=1) +
+  theme_classic() +
+  labs(x="Calf presence", y="Predicted probability") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=24),
+        axis.ticks.length = unit(0.4,"cm"),
+        panel.spacing = unit(0.3,"cm"))
 
 
   
