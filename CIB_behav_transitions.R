@@ -1,6 +1,6 @@
 #Arial Brewer
 #PhD Chapter 2: CIB Vocal Behavior
-#Describe vocal activity during behavioral transitions
+#Vocal activity during behavioral transitions
 
 #load packages
 library(tidyverse)

@@ -192,7 +192,7 @@ ggplot(data=callcat_groupsize, aes(x=group_size,y=number,fill=call_category)) +
 
 
 
-#################### Model building
+####################################### Model building
 #Multinomial distribution using mgcv package
 
 #default levels are cc,pc,ws
@@ -282,6 +282,7 @@ AIC(mn2,mn3,mn4,mn15)
 
 #model summary
 summary(mn4)
+plot(parameters(mn4))
 
 
 ##calculate 95% CI= (Coef +/- 1.96 * SE).
@@ -427,7 +428,7 @@ plot(callcat_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 
-####### Predictions (1=ws, 2=cc, 3=pc)    
+################ Predictions (1=ws, 2=cc, 3=pc)    
 #Marginal effects package predictions
 #using "by" because GAM doesn't work well with "condition"
 
@@ -488,17 +489,5 @@ ggplot(pred.calf, aes(x = calf_presence)) +
         panel.spacing = unit(0.3,"cm"))
 
 
-  
-#combined
-plot_predictions(mn4,by=c("behavior","calf_presence"),vcov=TRUE) +
-  facet_wrap(~group) +
-  theme_classic() +
-  labs(x="Behavior", y="Predicted probability") +
-  scale_color_manual(values=c("goldenrod3","darkgreen"))+
-  theme(text=element_text(family="serif", size=14)) +
-  theme(axis.title = element_text(size=12),
-        panel.spacing = unit(0.01,'cm'),
-        strip.background = element_rect(color="gray20"),
-        plot.margin = margin(10,15,10,10))
 
 

@@ -269,7 +269,7 @@ var(callrate_total$n_minute)
 
 
 
-################################### Model building- Hurdle model
+################################### Model building
 #check covariate levels
 levels(callrate_total$behavior)
 levels(callrate_total$calf_presence)
@@ -279,7 +279,7 @@ levels(callrate_total$tide)
 callrate_total$tide <- relevel(callrate_total$tide,ref = "Ebb")
 levels(callrate_total$tide) 
 
-###Poisson hurdle
+###Poisson hurdle because data is very zero-inflated
 hur.pois<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
                   ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
                   family=truncated_poisson, data=callrate_total)
@@ -300,7 +300,9 @@ pchisq(X2, df,lower.tail = FALSE)
 #reject null- model not a good fit
 
 
-###negative binomial hurdle
+###Negative Binomial Hurdle Mdel- 
+#glmmTMB sets reference to 1 so we model the probability of not producing a call 
+#vs producing a call- this is backwards of what I want- will change below (line 383)
 hur.nb<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
              ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total)
@@ -321,28 +323,7 @@ AICtab(hur.pois,hur.nb)   #nb is better model
 confint(hur.nb)
 
 ###plot coefficients and CI
-#zero-inflation (first part of hurdle- binomial)
-hurdle1 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
-                      coefficient=c(-0.804,-0.768,-0.088,0.157),
-                      lower=c(-1.294,-1.583,-0.123,-2.001),
-                      upper=c(-0.313,0.048,-0.053,2.314),
-                      sig=c("yes","no","yes","no")) %>% 
-  mutate(variable=as.factor(variable))
-
-#couldn't get behavior to be first so reversed order and will manually change level labels
-ggplot(data=hurdle1,aes(x=coefficient, y=rev(variable), color=sig)) +
-  geom_point(size=3.5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=0.75) +
-  geom_vline(xintercept=0,lty=2,lwd=0.5) +
-  theme_classic() +
-  scale_x_continuous(breaks=seq(-4,4,by=1)) +
-  labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="serif", size=14)) +
-  scale_color_manual(values=c("red3","deepskyblue4"))
-
-
-
-#conditional (second part of hurdle- truncated neg bin)
+#conditional (second part of hurdle- truncated negative binomial)
 hurdle2 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
                       coefficient=c(0.027,0.820,0.041,1.408),
                       lower=c(-0.353,-0.006,0.027,0.847),
@@ -364,20 +345,7 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 
 #####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
-### ZI model (part one of hurdle)
-#behavior (travel)
-(exp(-0.804)-1)*100
-
-#calf presence (yes)
-(exp(-0.768)-1)*100
-
-#group size
-(exp(-0.088)-1)*100
-
-#tide (flood)
-(exp(0.157)-1)*100
-
-### conditional model (part two of hurdle)
+##conditional model (part two of hurdle)
 #behavior (travel)
 (exp(0.027)-1)*100
 
@@ -392,7 +360,7 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 
 
-## Model diagnostics
+### Model diagnostics
 #examining residuals    
 E <- residuals(hur.nb)
 
@@ -412,8 +380,7 @@ plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 
-#######################Splitting hurdle components separately to test
-##binomial (Hurdle part 1) to see which is reference (0 or 1)
+##################### Isolating hurdle part 1 to test which is reference (0 or 1)
 #add new column to create 0 and 1
 callrate_total$n_minute2 <- as.numeric(callrate_total$n_minute)
 
@@ -433,6 +400,7 @@ head(callrate_total)
 #relevel so reference is 0 (probability of calling vs. reference of not calling)
 callrate_total$n_minute2 <- relevel(callrate_total$n_minute2,ref = "0")
 levels(callrate_total$n_minute2)
+
 
 #test model with just a binomial for first part of hurdle
 zi.hur<-glmmTMB(n_minute2 ~ behavior + calf_presence + group_size + tide + (1|encounter),
@@ -487,7 +455,7 @@ ggplot(data=zi.hur.data,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 
 
-################ Predictions- Hurdle part 1
+######################### Predictions- Hurdle part 1
 #behavior
 avg_predictions(zi.hur, condition="behavior",vcov=TRUE) 
 plot_predictions(zi.hur, condition="behavior",vcov=TRUE) +
@@ -517,9 +485,10 @@ plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE) +
 #both using predictions then put into ggplot for plot customization
 pred1 <- plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE, draw=FALSE)
 
-ggplot(pred, aes(x = group_size, color = behavior, fill = behavior)) +
+ggplot(pred1, aes(x = group_size, color = behavior, fill = behavior)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
   geom_line(aes(y = estimate), linewidth = 1) +
+  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
   theme_classic() +
   labs(x="Group size", y="Predicted probability of calling") +
   theme(text=element_text(family="serif", size=20),
@@ -531,7 +500,8 @@ ggplot(pred, aes(x = group_size, color = behavior, fill = behavior)) +
 
 
 
-################ Predictions- Hurdle part 2
+
+######################### Predictions- Hurdle part 2
 #group size
 avg_predictions(hur.nb,condition="group_size",type="response")
 plot_predictions(hur.nb,condition="group_size",vcov=TRUE) +
@@ -565,6 +535,7 @@ pred2 <- plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE, dra
 ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
   geom_line(aes(y = estimate), linewidth = 1) +
+  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
   theme_classic() +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
   theme(text=element_text(family="serif", size=20),
@@ -576,57 +547,63 @@ ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
 
 
-##use new data frame excluding regions of group size where we don't have data
-#Max group sizes: ebb=53, flood=24
-#first, create a new set of data to predict over
-new_data <- data.frame(tide = c(rep("Ebb",53), rep("Flood",24)),
-                          group_size = c(seq(1,53,1), seq(1,24,1)))
-
-#predictions with new data
-new_pred <- plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE, 
-                         newdata = new_data, draw = FALSE)
-
-#restricting to group sizes data has
-new_pred <- new_pred %>% 
-  mutate(group_size = case_when(tide == "Flood" & group_size > 24 ~ 100, TRUE ~ group_size)) %>% 
-  filter(group_size < 54)
-
-#Plot new predictions
-ggplot(new_pred, aes(x = group_size, color = tide, fill = tide)) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-  geom_line(aes(y = estimate), linewidth = 1) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("hotpink4","grey30")) +
-  scale_fill_manual(values=c("hotpink4","grey30")) +
-  scale_y_continuous(breaks=seq(0,60,by=10)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) +
-  coord_cartesian(ylim = c(0,50))
-  #ylim(-4,45)
 
 
 
 
 
 
-
-
-###OTHER
-##testing predictions with another package
-library(ggeffects)
-p <- predict_response(hur.nb,terms=c("group_size","tide"))
-plot(p,show_data=TRUE)  #y intercept lower than marginal effects package predictions
-
-##different y intercepts but same shape:
-#marginal effects package predicts using non-sig variables at behavior=travel,calf=yes 
-#coefficients of each variable and using group size of 53 as example
-exp(0.11+0.027+0.82+0.04*53+1.4)
-
-#gg effects package predicts using non-sig variables at behavior=mill,calf=no
-exp(0.11+0+0+0.04*53+1.4)
+# ###########OTHER
+# ##Amy suggestion- instead of using rug, remove group sizes which aren't present in raw data
+# #Max group sizes: ebb=53, flood=24
+# #first, create a new set of data to predict over
+# new_data <- data.frame(tide = c(rep("Ebb",53), rep("Flood",24)),
+#                           group_size = c(seq(1,53,1), seq(1,24,1)))
+# 
+# #predictions with new data
+# new_pred <- plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE, 
+#                          newdata = new_data, draw = FALSE)
+# 
+# #restricting to group sizes data has
+# new_pred <- new_pred %>% 
+#   mutate(group_size = case_when(tide == "Flood" & group_size > 24 ~ 100, TRUE ~ group_size)) %>% 
+#   filter(group_size < 54)
+# 
+# #Plot new predictions
+# ggplot(new_pred, aes(x = group_size, color = tide, fill = tide)) +
+#   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+#   geom_line(aes(y = estimate), linewidth = 1) +
+#   theme_classic() +
+#   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+#   theme(text=element_text(family="serif", size=20),
+#         axis.text = element_text(size=20),
+#         axis.ticks.length = unit(0.4,"cm")) +
+#   scale_color_manual(values=c("hotpink4","grey30")) +
+#   scale_fill_manual(values=c("hotpink4","grey30")) +
+#   scale_y_continuous(breaks=seq(0,60,by=10)) +
+#   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) +
+#   coord_cartesian(ylim = c(0,50))
+#   #ylim(-4,45)
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# ##testing predictions with another package
+# library(ggeffects)
+# p <- predict_response(hur.nb,terms=c("group_size","tide"))
+# plot(p,show_data=TRUE)  #y intercept lower than marginal effects package predictions
+# 
+# ##different y intercepts but same shape:
+# #marginal effects package predicts using non-sig variables at behavior=travel,calf=yes 
+# #coefficients of each variable and using group size of 53 as example
+# exp(0.11+0.027+0.82+0.04*53+1.4)
+# 
+# #gg effects package predicts using non-sig variables at behavior=mill,calf=no
+# exp(0.11+0+0+0.04*53+1.4)
 
 
 
