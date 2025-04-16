@@ -429,29 +429,14 @@ plot(callcat_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 ################ Predictions (1=ws, 2=cc, 3=pc)    
-#Marginal effects package predictions
-#using "by" because GAM doesn't work well with "condition"
+#Marginal effects package 
 
 #behavior
-avg_predictions(mn4,by="behavior",type="response")
-
-#using plot predictions
-plot_predictions(mn4,by="behavior",vcov=TRUE) +
-  facet_wrap(~group) +
-  theme_classic() +
-  labs(x="Behavior", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=24),
-        axis.ticks.length = unit(0.4,"cm"),
-        panel.spacing = unit(0.3,"cm"))
-
-
-#using ggplot for customization
-pred.behav <- plot_predictions(mn4,by="behavior",vcov=TRUE,draw=FALSE)
+pred.behav <- plot_predictions(mn4,condition="behavior",vcov=TRUE,draw=FALSE)
 
 ggplot(pred.behav, aes(x = behavior)) +
   facet_wrap(~group) +
-  geom_pointrange(aes(y=estimate,ymin=conf.low,ymax=conf.high),size=1,lwd=1) +
+  geom_pointrange(aes(y=estimate,ymin=conf.low,ymax=conf.high),lwd=1) +
   theme_classic() +
   labs(x="Behavior", y="Predicted probability") +
   theme(text=element_text(family="serif", size=20),
@@ -462,21 +447,7 @@ ggplot(pred.behav, aes(x = behavior)) +
 
 
 #calf presence
-avg_predictions(mn4,by="calf_presence",type="response")
-
-#using plot_predictions
-plot_predictions(mn4,by="calf_presence",vcov=TRUE)+
-  facet_wrap(~group) +
-  theme_classic() +
-  labs(x="Calf presence", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm"),
-        panel.spacing = unit(0.3,'cm'))
-
-
-#using ggplot for customization
-pred.calf <- plot_predictions(mn4,by="calf_presence",vcov=TRUE,draw=FALSE)
+pred.calf <- plot_predictions(mn4,condition="calf_presence",vcov=TRUE,draw=FALSE)
 
 ggplot(pred.calf, aes(x = calf_presence)) +
   facet_wrap(~group) +
