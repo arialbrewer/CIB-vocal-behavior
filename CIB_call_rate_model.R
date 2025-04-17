@@ -9,6 +9,7 @@ library(performance)
 library(parameters)
 library(DHARMa)
 library(glmmTMB)
+library(lme4)
 library(bbmle) 
 library(viridis)
 library(lmtest)
@@ -179,69 +180,6 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute, color=tide)) +
   scale_x_continuous(breaks=seq(0,60,by=5))
 
 
-#### violin plots of call rate by categorical variables
-#Behavior
-p1 <- callrate_total %>%
-  ggplot(aes(x=behavior, y=n_minute, fill=behavior)) +
-  geom_violin(show.legend = FALSE) +
-  theme_classic() +
-  scale_fill_manual(values=c("gold2","cyan4")) +
-  labs(x="Behavior", y="Calling rate (# calls/minute)") +
-  ggtitle("All")
-
-p2 <- callrate_total %>%
-  ggplot(aes(x=behavior, y=n_minute, fill=behavior)) +
-  geom_violin(show.legend = FALSE) +
-  theme_classic() +
-  scale_fill_manual(values=c("gold2","cyan4")) +
-  scale_y_continuous(expand=c(0,0)) +
-  labs(x="Behavior", y="Calling rate (# calls/minute)") +
-  ggtitle("Non-zeros") +
-  ylim(1,64)
-
-p1+p2
-
-#Calf presence
-p3 <- callrate_total %>%
-  ggplot(aes(x=calf_presence, y=n_minute, fill=calf_presence)) +
-  geom_violin(show.legend = FALSE) +
-  theme_classic() +
-  scale_fill_manual(values=c("gold2","cyan4")) +
-  labs(x="Calf presence", y="Calling rate (# calls/minute)") +
-  ggtitle("All")
-
-p4 <- callrate_total %>%
-  ggplot(aes(x=calf_presence, y=n_minute, fill=calf_presence)) +
-  geom_violin(show.legend = FALSE) +
-  theme_classic() +
-  scale_fill_manual(values=c("gold2","cyan4")) +
-  labs(x="Calf presence", y="Calling rate (# calls/minute)") +
-  ggtitle("Non-zeros") +
-  ylim(1,64)
-
-p3+p4
-
-#Tide
-p5 <- callrate_total %>%
-  ggplot(aes(x=tide, y=n_minute, fill=tide)) +
-  geom_violin(show.legend = FALSE) +
-  theme_classic() +
-  scale_fill_manual(values=c("gold2","cyan4")) +
-  labs(x="Tidal state", y="Calling rate (# calls/minute)") +
-  ggtitle("All")
-
-p6 <- callrate_total %>%
-  ggplot(aes(x=tide, y=n_minute, fill=tide)) +
-  geom_violin(show.legend = FALSE) +
-  theme_classic() +
-  scale_fill_manual(values=c("gold2","cyan4")) +
-  labs(x="Tidal state", y="Calling rate (# calls/minute)") +
-  ggtitle("Non-zeros") +
-  ylim(1,64)
-
-p5+p6
-
-
 ###explore mean pattern
 groupsize_mean <- callrate_total %>% 
   group_by(group_size) %>% 
@@ -279,28 +217,60 @@ levels(callrate_total$tide)
 callrate_total$tide <- relevel(callrate_total$tide,ref = "Ebb")
 levels(callrate_total$tide) 
 
-###Poisson hurdle because data is very zero-inflated
-hur.pois<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
-                  ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
-                  family=truncated_poisson, data=callrate_total)
 
-summary(hur.pois)
-plot(parameters(hur.pois))
+###Poisson model
+pois<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
+              family=poisson, data=callrate_total)
 
-#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
-sum(residuals(hur.pois,type="pearson")^2)/1039 
+summary(pois)
 
-#check residuals
-simulateResiduals(fittedModel = hur.pois, plot = T)
+#test for overdispersion (from Bolker 2024)
+overdisp_fun <- function(model) {
+  rdf <- df.residual(model)
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
 
-#Chi2 Goodness of fit test (null hypothesis= model is correctly specified)  
-X2 <- sum((callrate_total$n_minute - fitted(hur.pois))^2 / fitted(hur.pois))
-df <- length(callrate_total$n_minute)-length(coef(hur.pois))
+overdisp_fun(pois)   #model is overdispersed
+
+#check overdispersion parameter manually (X2/df.resid) 
+#Overdispersed > 1
+sum(residuals(pois,type="pearson")^2)/1045 
+
+#Chi2 Goodness of fit test 
+#null hypothesis= model is correctly specified
+X2 <- sum((callrate_total$n_minute - fitted(pois))^2 / fitted(pois))
+df <- length(callrate_total$n_minute)-length(coef(pois))
 pchisq(X2, df,lower.tail = FALSE)
 #reject null- model not a good fit
 
 
-###Negative Binomial Hurdle Mdel- 
+
+###Negative binomial model to account for overdispersion
+nb<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
+            family=nbinom2, data=callrate_total)
+
+summary(nb)
+
+#check overdispersion
+overdisp_fun(nb)    #model is no longer overdispersed
+
+#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
+sum(residuals(nb,type="pearson")^2)/1044 
+
+#Chi2 Goodness of fit test
+#null hypothesis= model is correctly specified
+X2 <- sum((callrate_total$n_minute - fitted(nb))^2 / fitted(nb))
+df <- length(callrate_total$n_minute)-length(coef(nb))
+pchisq(X2, df,lower.tail = FALSE)
+#reject null- model still not a good fit- we still have zero-inflation
+
+
+
+###Negative Binomial Hurdle Model to account for zero-inflation + overdispersion
 #glmmTMB sets reference to 1 so we model the probability of not producing a call 
 #vs producing a call- this is backwards of what I want- will change below (line 383)
 hur.nb<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
@@ -313,11 +283,13 @@ plot(parameters(hur.nb))
 #check residuals
 simulateResiduals(fittedModel = hur.nb, plot = T)
 
-###comparing hurdle poisson and hurdle nb
+
+###comparing pois,nb,hur.nb
 #likelihood ratio test
-lrtest(hur.pois,hur.nb)   #nb is better model
+lrtest(pois,nb,hur.nb)  
 #AIC
-AICtab(hur.pois,hur.nb)   #nb is better model
+AICtab(pois,nb,hur.nb)   #hur.nb is better model
+
 
 #calculate 95% CI
 confint(hur.nb)

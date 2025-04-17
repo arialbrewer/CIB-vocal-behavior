@@ -203,6 +203,12 @@ callcat_total$call_category <- relevel(callcat_total$call_category,ref = "ws")
 callcat_total$call_category2 <- as.numeric(callcat_total$call_category)-1
 levels(callcat_total$call_category)
 
+#check levels of fixed effects
+levels(callcat_total$behavior)
+levels(callcat_total$calf_presence)
+levels(callcat_total$tide)
+
+
 #categories must be coded 0 to K
 all(callcat_total$call_category2 %in% c(0L, 1L, 2L))
 
@@ -282,7 +288,6 @@ AIC(mn2,mn3,mn4,mn15)
 
 #model summary
 summary(mn4)
-plot(parameters(mn4))
 
 
 ##calculate 95% CI= (Coef +/- 1.96 * SE).
@@ -445,7 +450,6 @@ ggplot(pred.behav, aes(x = behavior)) +
         panel.spacing = unit(0.3,"cm"))
 
 
-
 #calf presence
 pred.calf <- plot_predictions(mn4,condition="calf_presence",vcov=TRUE,draw=FALSE)
 
@@ -458,6 +462,112 @@ ggplot(pred.calf, aes(x = calf_presence)) +
         axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
         panel.spacing = unit(0.3,"cm"))
+
+
+
+
+
+
+
+
+
+
+
+
+##############################################################################
+#Switching reference levels for behavior and calf presence so we can see effect on mill and no calf
+
+#relevel so ws is level 0 (reference level)
+callcat_total$call_category <- relevel(callcat_total$call_category,ref = "ws")
+callcat_total$call_category2 <- as.numeric(callcat_total$call_category)-1
+levels(callcat_total$call_category)
+
+#categories must be coded 0 to K
+all(callcat_total$call_category2 %in% c(0L, 1L, 2L))
+
+#relevel so travel is reference
+callcat_total$behavior <- relevel(callcat_total$behavior,ref = "Travel")
+levels(callcat_total$behavior)
+
+#relevel so no calf is reference
+callcat_total$calf_presence <- relevel(callcat_total$calf_presence,ref = "yes")
+levels(callcat_total$calf_presence)
+
+#relevel so ebb is reference
+callcat_total$tide <- relevel(callcat_total$tide,ref = "Flood")
+levels(callcat_total$tide)
+
+
+#re-run model
+mn4.flip <- gam(list(call_category2 ~ behavior + calf_presence + group_size + tide + s(encounter,bs="re"),
+                               ~ behavior + calf_presence + group_size + tide + s(encounter,bs="re")),
+           data = callcat_total, family = multinom(K=2), method = "REML", optimizer = "efs")
+
+#model summary
+summary(mn4.flip)
+
+
+##calculate 95% CI= (Coef +/- 1.96 * SE).
+#cc for behavior-mill
+2.470e+00 + 1.96*5.636e-01
+2.470e+00 - 1.96*5.636e-01
+
+#cc for calf presence-no
+-5.695e+02 + 1.96*9.082e+123
+-5.695e+02 - 1.96*9.082e+123
+
+#cc for group size
+5.098e-02 + 1.96*3.997e-02
+5.098e-02 - 1.96*3.997e-02
+
+#cc for tide-ebb
+-2.504e-01 + 1.96*1.548e+00
+-2.504e-01 - 1.96*1.548e+00
+
+#pc for behavior-mill
+9.303e-01  + 1.96*1.964e-01 
+9.303e-01  - 1.96*1.964e-01 
+
+#pc for calf presence-no
+2.672e+00 + 1.96*4.553e-01 
+2.672e+00 - 1.96*4.553e-01 
+
+#pc for group size
+2.907e-03 + 1.96*5.098e-03
+2.907e-03 - 1.96*5.098e-03
+
+#pc for tide-ebb
+9.668e-01 + 1.96*1.212e+00
+9.668e-01 - 1.96*1.212e+00
+
+
+
+#####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
+###Combined calls
+#behavior (mill)
+(exp(2.469)-1)*100
+
+#group size
+(exp(0.051)-1)*100
+
+#tide (ebb)
+(exp(-0.25)-1)*100
+
+
+###Pulsed calls
+#behavior (mill)
+(exp(0.930)-1)*100
+
+#calf presence (no)
+(exp(2.672)-1)*100
+
+#group size
+(exp(0.003)-1)*100
+
+#tide (ebb)
+(exp(0.967)-1)*100
+
+
 
 
 
