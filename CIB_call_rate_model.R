@@ -268,6 +268,11 @@ df <- length(callrate_total$n_minute)-length(coef(nb))
 pchisq(X2, df,lower.tail = FALSE)
 #reject null- model still not a good fit- we still have zero-inflation
 
+###comparing pois and nb models
+#likelihood ratio test
+lrtest(pois,nb)   #nb is better model
+#AIC
+AICtab(pois,nb)   #nb is better model
 
 
 ###Negative Binomial Hurdle Model to account for zero-inflation + overdispersion
