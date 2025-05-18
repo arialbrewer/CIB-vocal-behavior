@@ -145,7 +145,6 @@ ggplot(callrate_total, aes(x=group_size, y=n_minute)) +
   theme_classic() +
   geom_smooth(method="glm") +
   labs(x="Group size",y="Calling rate (# calls/minute)") +
-  theme(plot.title=element_text(hjust=0.5)) +
   scale_y_continuous(breaks=seq(0,60,by=10)) +
   scale_x_continuous(breaks=seq(0,60,by=5)) 
 
@@ -193,6 +192,48 @@ ggplot(groupsize_mean, aes(x=group_size, y=mean_callrate))+
   scale_x_continuous(expand=c(0,0)) +
   scale_y_continuous(expand=c(0,0)) +
   labs(x="Group size", y="Mean calling rate")
+
+
+##plots for andrew
+#linear-linear
+ggplot(groupsize_mean, aes(x=group_size, y=mean_callrate))+
+  geom_line() +
+  geom_point() +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(0,60,by=5)) +
+  scale_y_continuous(breaks=seq(0,30,by=5)) +
+  labs(x="Group size", y="Mean calling rate", title="linear linear") +
+  theme(plot.title=element_text(hjust=0.5)) 
+
+#log-linear
+ggplot(groupsize_mean, aes(x=log(group_size), y=mean_callrate))+
+  geom_line() +
+  geom_point() +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(0,5,by=1)) +
+  scale_y_continuous(breaks=seq(0,30,by=5)) +
+  labs(x="log (Group size)", y="Mean calling rate", title="log linear") +
+  theme(plot.title=element_text(hjust=0.5)) 
+
+#linear-log
+ggplot(groupsize_mean, aes(x=group_size, y=log(mean_callrate)))+
+  geom_line() +
+  geom_point() +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(0,60,by=5)) +
+  scale_y_continuous(breaks=seq(-6,6,by=1)) +
+  labs(x="Group size", y="log (Mean calling rate)", title="linear log") +
+  theme(plot.title=element_text(hjust=0.5)) 
+
+#log-log
+ggplot(groupsize_mean, aes(x=log(group_size), y=log(mean_callrate)))+
+  geom_line() +
+  geom_point() +
+  theme_classic() +
+  scale_x_continuous(breaks=seq(0,5,by=1)) +
+  scale_y_continuous(breaks=seq(-6,6,by=1)) +
+  labs(x="Group size", y="log (Mean calling rate)", title="log log") +
+  theme(plot.title=element_text(hjust=0.5)) 
 
 
 #how many zeros are present vs. non-zeros- data very zero-inflated
@@ -246,12 +287,13 @@ df <- length(callrate_total$n_minute)-length(coef(pois))
 pchisq(X2, df,lower.tail = FALSE)
 #reject null- model not a good fit
 
-
 ###Negative binomial model to account for overdispersion
 nb<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
             family=nbinom2, data=callrate_total)
 
 summary(nb)
+
+lrtest(gamnb,nb)
 
 #check overdispersion
 overdisp_fun(nb)    #model is no longer overdispersed
@@ -285,7 +327,6 @@ plot(parameters(hur.nb))
 
 #check residuals
 simulateResiduals(fittedModel = hur.nb, plot = T)
-
 
 ###comparing pois,nb,hur.nb
 #likelihood ratio test
@@ -472,49 +513,32 @@ ggplot(pred1, aes(x = group_size, color = behavior, fill = behavior)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
 
-
-
 ######################### Predictions- Hurdle part 2
 #group size
 avg_predictions(hur.nb,condition="group_size",type="response")
 
-plot_predictions(hur.nb,condition="group_size",vcov=TRUE) +
+plot_predictions(hur.nb2,condition="group_size",vcov=TRUE) +
   theme_classic() +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
   scale_y_continuous(breaks=seq(0,40,by=10)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=5)) 
 
-#double check this-make new data frame for new predictions
-pred1.test <- predictions(hur.nb,newdata=datagrid(n_minute=callrate_total$n_minute,group_size=1:53))
+#make in ggplot
+pred.gs <- plot_predictions(hur.nb,condition="group_size",vcov=TRUE, draw=FALSE)
 
 #plot
-ggplot(pred1.test, aes(x = group_size)) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+ggplot(pred.gs, aes(x = group_size)) +
   geom_line(aes(y = estimate), linewidth = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
   geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
   theme_classic() +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)")
-
 
 #tide
 avg_predictions(hur.nb,condition="tide",type="response")
-
 plot_predictions(hur.nb,condition="tide",vcov=TRUE) +
   theme_classic() +
   labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
-
-#double check this-make new data frame for new predictions
-pred2.test <- predictions(hur.nb,newdata=datagrid(n_minute=callrate_total$n_minute,group_size=1:53,tide=callrate_total$tide))
-
-#plot
-ggplot(pred2.test, aes(x = group_size, color=tide, fill=tide)) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-  geom_line(aes(y = estimate), linewidth = 1) +
-  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)")
-
-###these are all the same so this package is creating a new dataframe behind the scenes
 
 
 #both via plot_predictions
@@ -552,97 +576,131 @@ ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
 
 
 
+########### Adding log(group size) for TNB portion of the model (Hurdle part 2)
+hur.nb2<-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
+                ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
+                family=truncated_nbinom2, data=callrate_total)
 
+summary(hur.nb2)
+plot(parameters(hur.nb2))
 
+#calculate 95% CI
+confint(hur.nb2)
 
-#######################tests for Andrew and Sarah
-#log-log plot 
-ggplot(callrate_total, aes(x=(log(group_size)), y=log(n_minute))) +
-  geom_point(alpha=0.2, size=3) +
+###plot coefficients and CI
+#conditional (second part of hurdle- truncated negative binomial)
+hurdle2.2 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
+                      coefficient=c(0.04282,-0.53717,0.69973,1.41173),
+                      lower=c(-0.4004486,-1.6093171,0.4439716,0.4989139),
+                      upper=c(0.48609652,0.53497778,0.95548433,2.32455091),
+                      sig=c("no","no","yes","yes")) %>% 
+  mutate(variable=as.factor(variable))
+
+#couldn't get behavior to be first so reversed order and will manually change level labels
+ggplot(data=hurdle2.2,aes(x=coefficient, y=rev(variable), color=sig)) +
+  geom_point(size=3.5) +
+  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
+  geom_vline(xintercept=0,lty=2,lwd=0.7) +
   theme_classic() +
-  labs(x="log(Group size)",y="log(Calling rate (# calls/minute))") 
+  scale_x_continuous(breaks=seq(-4,4,by=1)) +
+  labs(x="Coefficient", y=" Variable", color="Significant") +
+  theme(text=element_text(family="serif", size=20)) +
+  scale_color_manual(values=c("red3","deepskyblue4"))
 
 
-#fit simple linear model with log-log
-callrate_total$l_minute <- log(callrate_total$n_minute + 1)
-callrate_total$l_group <- log(callrate_total$group_size)
 
-model <- lm(l_minute ~ -1 + l_group,data=callrate_total)
-summary(model)
+#####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
+#behavior (travel)
+(exp(0.043)-1)*100
+
+#calf presence (yes)
+(exp(-0.537)-1)*100
+
+#log(group size)
+(exp(0.699)-1)*100
+
+#tide (flood)
+(exp(1.412)-1)*100
 
 
-#log-log plot with model predictions for all data (zeros and nonzeros)
-ggplot(callrate_total, aes(x=(log(group_size)), y=log(n_minute))) +
-  geom_point(alpha=0.2, size=3) +
+
+### Model diagnostics
+#examining residuals    
+E <- residuals(hur.nb2)
+
+#group size
+callrate_total$rate_group_size <- cut(callrate_total$group_size, seq(0, 60, by=10))
+plot(callrate_total$rate_group_size, E, xlab="Group size",ylab="Residuals")
+
+#behavior
+plot(callrate_total$behavior, E, xlab="Behavior", ylab="Residuals")
+
+#calf presence
+plot(callrate_total$calf_presence, E, xlab="Calf presence", ylab="Residuals")
+
+#tide
+plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
+
+
+
+#Predictions- Hurdle part 2
+#group size
+avg_predictions(hur.nb2,condition="group_size",type="response")
+
+plot_predictions(hur.nb2,condition="group_size",vcov=TRUE) +
   theme_classic() +
-  labs(x="log(Group size)",y="log(Calling rate (# calls/minute))") +
-  geom_line(aes(y=predict(model)))
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  scale_y_continuous(breaks=seq(0,20,by=5)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=5)) 
 
+#make in ggplot
+pred.gs <- plot_predictions(hur.nb2,condition="group_size",vcov=TRUE, draw=FALSE)
 
-
-####removing zeros (calling rate portion)
-df_new <- filter_if(callrate_total, is.numeric, all_vars((.) != 0))
-
-#fit simple linear model with log-log
-df_new$l_minute <- log(df_new$n_minute)
-df_new$l_group <- log(df_new$group_size)
-
-model2 <- lm(l_minute ~ -1 + l_group,data=df_new)
-summary(model2)
-
-#log-log plot with model predictions
-ggplot(df_new, aes(x=(log(group_size)), y=log(n_minute))) +
-  geom_point(alpha=0.2, size=3) +
+#plot
+ggplot(pred.gs, aes(x = group_size)) +
+  geom_line(aes(y = estimate), linewidth = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
   theme_classic() +
-  labs(x="log(Group size)",y="log(Calling rate (# calls/minute))") +
-  geom_line(aes(y=predict(model2)))
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)")
 
+#tide
+avg_predictions(hur.nb2,condition="tide",type="response")
 
-#another test adding 1 per andrew's email on 5/8
-df_new$l_minute1 <- log(df_new$n_minute+1)
-df_new$l_group1 <- log(df_new$group_size+1)
-
-model3 <- lm(l_minute1 ~ -1 + l_group1,data=df_new)
-summary(model3)
-
-ggplot(df_new, aes(x=(log(group_size)), y=log(n_minute))) +
-  geom_point(alpha=0.2, size=3) +
+plot_predictions(hur.nb2,condition="tide",vcov=TRUE) +
   theme_classic() +
-  labs(x="log(Group size)",y="log(Calling rate (# calls/minute))") +
-  geom_line(aes(y=predict(model3)))
+  labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
 
 
-##########test with my model (second part of hurdle- call rate)
-#remove zeros to test just call rate model
-df_new2 <- filter_if(callrate_total, is.numeric, all_vars((.) != 0))
-
-test<-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
-              family=truncated_nbinom2, data=df_new2)
-
-summary(test)
-
-predict(test)
-
-#log-log plot with predictions
-ggplot(df_new2, aes(x=(log(group_size)), y=log(n_minute))) +
-  geom_point(alpha=0.2, size=3) +
+#both via plot_predictions
+plot_predictions(hur.nb2,condition=c("group_size","tide"),vcov=TRUE) +
   theme_classic() +
-  labs(x="log(Group size)",y="log(Calling rate (# calls/minute))") +
-  geom_line(aes(y=predict(test))) 
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=20),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_color_manual(values=c("hotpink4","grey30")) +
+  scale_fill_manual(values=c("hotpink4","grey30")) +
+  scale_y_continuous(breaks=seq(0,150,by=25)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10))
 
 
-#log-log plot with model predictions
-pred.test <- predictions(test,condition=c("group_size"),vcov=TRUE, draw=FALSE)
+#both using predictions then put into ggplot for plot customization
+pred2 <- plot_predictions(hur.nb2,condition=c("group_size","tide"),vcov=TRUE, draw=FALSE)
 
-ggplot(df_new2, aes(x=(log(group_size)), y=log(n_minute))) +
-  geom_point(alpha=0.2, size=3) +
+ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+  geom_line(aes(y = estimate), linewidth = 1) +
+  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
   theme_classic() +
-  labs(x="log(Group size)",y="log(Calling rate (# calls/minute))") +
-  geom_line(aes(y=pred.test$estimate))
-
-
-
-
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  theme(text=element_text(family="serif", size=20),
+        axis.text = element_text(size=20),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_color_manual(values=c("hotpink4","grey30")) +
+  scale_fill_manual(values=c("hotpink4","grey30")) +
+  scale_y_continuous(breaks=seq(0,150,by=25)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
 
 
 
