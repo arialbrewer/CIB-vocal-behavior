@@ -577,15 +577,27 @@ ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
 
 
 ########### Adding log(group size) for TNB portion of the model (Hurdle part 2)
-hur.nb2<-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
-                ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
-                family=truncated_nbinom2, data=callrate_total)
+#Truncate data to non-zeros
+callrate_total_trunc <- callrate_total[which(callrate_total$n_minute>0),]
 
-summary(hur.nb2)
-plot(parameters(hur.nb2))
+#tide is switched around from call cat model, set ebb as reference level
+callrate_total_trunc$tide <- relevel(callrate_total_trunc$tide,ref = "Ebb")
+levels(callrate_total_trunc$tide) 
+
+########### Adding log(group size) for TNB portion of the model (Hurdle part 2)
+nb2<-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
+             family=truncated_nbinom2, data=callrate_total_trunc)
+
+
+# #hur.nb2<-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
+#                 ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
+#                 family=truncated_nbinom2, data=callrate_total)
+
+summary(nb2)
+plot(parameters(nb2))
 
 #calculate 95% CI
-confint(hur.nb2)
+confint(nb2)
 
 ###plot coefficients and CI
 #conditional (second part of hurdle- truncated negative binomial)
@@ -643,18 +655,18 @@ plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 
-#Predictions- Hurdle part 2
+#Predictions
 #group size
-avg_predictions(hur.nb2,condition="group_size",type="response")
+avg_predictions(nb2,condition="group_size",type="response")
 
-plot_predictions(hur.nb2,condition="group_size",vcov=TRUE) +
+plot_predictions(nb2,condition="group_size",vcov=TRUE) +
   theme_classic() +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
   scale_y_continuous(breaks=seq(0,20,by=5)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=5)) 
 
 #make in ggplot
-pred.gs <- plot_predictions(hur.nb2,condition="group_size",vcov=TRUE, draw=FALSE)
+pred.gs <- plot_predictions(nb2,condition="group_size",vcov=TRUE, draw=FALSE)
 
 #plot
 ggplot(pred.gs, aes(x = group_size)) +
@@ -665,28 +677,15 @@ ggplot(pred.gs, aes(x = group_size)) +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)")
 
 #tide
-avg_predictions(hur.nb2,condition="tide",type="response")
+avg_predictions(nb2,condition="tide",type="response")
 
-plot_predictions(hur.nb2,condition="tide",vcov=TRUE) +
+plot_predictions(nb2,condition="tide",vcov=TRUE) +
   theme_classic() +
   labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
 
 
-#both via plot_predictions
-plot_predictions(hur.nb2,condition=c("group_size","tide"),vcov=TRUE) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("hotpink4","grey30")) +
-  scale_fill_manual(values=c("hotpink4","grey30")) +
-  scale_y_continuous(breaks=seq(0,150,by=25)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10))
-
-
 #both using predictions then put into ggplot for plot customization
-pred2 <- plot_predictions(hur.nb2,condition=c("group_size","tide"),vcov=TRUE, draw=FALSE)
+pred2 <- plot_predictions(nb2,condition=c("group_size","tide"),vcov=TRUE, draw=FALSE)
 
 ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
