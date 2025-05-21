@@ -257,7 +257,7 @@ ggplot(travel.mill, aes(x=t_index,y=reorder(call_type,desc(t_index)),height=num_
 
 
 
-#################### Density ridge plots
+#################### Density ridge plots for manuscript
 #New data format for ridge plots, data above has call counts per minute, ridge needs one call per row
 
 #### MILL TO TRAVEL
