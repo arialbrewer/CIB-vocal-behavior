@@ -193,7 +193,7 @@ ggplot(data=callcat_groupsize, aes(x=group_size,y=number,fill=call_category)) +
 
 
 ####################################### Model building
-#Multinomial distribution using mgcv package
+#Multinomial GLMM using mgcv package
 
 #default levels are cc,pc,ws
 levels(callcat_total$call_category)
@@ -434,8 +434,6 @@ plot(callcat_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 ################ Predictions (1=ws, 2=cc, 3=pc)    
-#Marginal effects package 
-
 #behavior
 pred.behav <- plot_predictions(mn4,condition="behavior",vcov=TRUE,draw=FALSE)
 
@@ -467,15 +465,7 @@ ggplot(pred.calf, aes(x = calf_presence)) +
 
 
 
-
-
-
-
-
-
-
-##############################################################################
-#Switching reference levels for behavior and calf presence so we can see effect on mill and no calf
+###########Switching reference level for behavior & calf so can see effect on mill & no calf
 
 #relevel so ws is level 0 (reference level)
 callcat_total$call_category <- relevel(callcat_total$call_category,ref = "ws")
@@ -493,7 +483,7 @@ levels(callcat_total$behavior)
 callcat_total$calf_presence <- relevel(callcat_total$calf_presence,ref = "yes")
 levels(callcat_total$calf_presence)
 
-#relevel so ebb is reference
+#relevel so flood is reference
 callcat_total$tide <- relevel(callcat_total$tide,ref = "Flood")
 levels(callcat_total$tide)
 
