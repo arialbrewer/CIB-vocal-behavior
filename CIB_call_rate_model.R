@@ -368,6 +368,7 @@ zi.hur<-glmmTMB(n_minute2 ~ behavior + calf_presence + group_size + tide + (1|en
                  family=binomial(link="logit"), data=callrate_total)
 
 summary(zi.hur)
+ranef(zi.hur)
 plot(parameters(zi.hur))
 
 #this is the opposite of what we see in glmmTMB hurdle. So for the hurdle model,
@@ -427,34 +428,24 @@ plot_predictions(zi.hur, condition="group_size",vcov=TRUE) +
   scale_y_continuous(breaks=seq(0,1,by=0.25)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
-#both via plot_predictions
-plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted probability of calling") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("red3","blue3")) +
-  scale_fill_manual(values=c("red","deepskyblue")) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
-
 
 #both using predictions then put into ggplot for plot customization
-pred.h1 <- plot_predictions(zi.hur,condition=c("group_size","behavior"),vcov=TRUE, draw=FALSE)
+pred.h1 <- plot_predictions(zi.hur,condition=c("group_size","behavior"),
+                            re.form=NULL,vcov=TRUE, draw=FALSE)
 
-#with rug
-ggplot(pred.h1, aes(x = group_size, color = behavior, fill=behavior)) +
-  geom_line(aes(y = estimate), linewidth = 1) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted probability of calling") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("red3","blue3")) +
-  scale_fill_manual(values=c("red","deepskyblue")) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
+# #with rug
+# ggplot(pred.h1, aes(x = group_size, color = behavior, fill=behavior)) +
+#   geom_line(aes(y = estimate), linewidth = 1) +
+#   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+#   geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
+#   theme_classic() +
+#   labs(x="Group size", y="Predicted probability of calling") +
+#   theme(text=element_text(family="serif", size=20),
+#         axis.text = element_text(size=20),
+#         axis.ticks.length = unit(0.4,"cm")) +
+#   scale_color_manual(values=c("red3","blue3")) +
+#   scale_fill_manual(values=c("red","deepskyblue")) +
+#   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
 
 #with raw data points instead of rug
@@ -512,21 +503,9 @@ plot_predictions(hur.nb,condition="tide",vcov=TRUE) +
   labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
 
 
-#both via plot_predictions
-plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("hotpink4","grey30")) +
-  scale_fill_manual(values=c("hotpink4","grey30")) +
-  scale_y_continuous(breaks=seq(0,150,by=25)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,70,by=10))
-
-
 #both using predictions then put into ggplot for plot customization
-pred.h2 <- plot_predictions(hur.nb,condition=c("group_size","tide"),vcov=TRUE, draw=FALSE)
+pred.h2 <- plot_predictions(hur.nb,condition=c("group_size","tide"),
+                            re.form=NULL, vcov=TRUE, draw=FALSE)
 
 ggplot(pred.h2, aes(x = group_size, color = tide, fill = tide)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
@@ -562,6 +541,7 @@ nb2<-glmmTMB(n_minute ~ behavior + calf_presence + lgroup_size + tide + (1|encou
              family=truncated_nbinom2, data=callrate_total_trunc)
 
 summary(nb2)
+ranef(nb2)
 plot(parameters(nb2))
 
 
@@ -587,7 +567,6 @@ ggplot(data=hurdle2.2,aes(x=coefficient, y=rev(variable), color=sig)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
   theme(text=element_text(family="serif", size=20)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
-
 
 
 #####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
@@ -621,22 +600,22 @@ plot_predictions(nb2,condition="tide",vcov=TRUE) +
 
 
 #both predictions then put into ggplot for plot customization
-pred2 <- plot_predictions(nb2,condition=c("lgroup_size","tide"),vcov=TRUE, draw=FALSE)
+pred2 <- plot_predictions(nb2,condition=c("lgroup_size","tide"),re.form=NA, vcov=TRUE, draw=FALSE)
 
-#with rug
-ggplot(pred2, aes(x = exp(lgroup_size), color = tide, fill = tide)) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-  geom_line(aes(y = estimate), linewidth = 1) +
-  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(breaks=seq(0,150,by=25)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
+# #with rug
+# ggplot(pred2, aes(x = exp(lgroup_size), color = tide, fill = tide)) +
+#   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
+#   geom_line(aes(y = estimate), linewidth = 1) +
+#   geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
+#   theme_classic() +
+#   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+#   theme(text=element_text(family="serif", size=20),
+#         axis.text = element_text(size=20),
+#         axis.ticks.length = unit(0.4,"cm")) +
+#   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
+#   scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
+#   scale_y_continuous(breaks=seq(0,150,by=25)) +
+#   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
 
 #with raw data points 
 ggplot() +
@@ -667,7 +646,7 @@ ggplot() +
   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
   scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,150,by=25)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
 
 
 
@@ -694,12 +673,5 @@ ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
   scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,10,by=1)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
-
-
-
-
-
-
-
 
 
