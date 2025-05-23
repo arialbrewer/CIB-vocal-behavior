@@ -273,32 +273,25 @@ lrtest(pois,nb)   #nb is better model
 ###Negative Binomial Hurdle Model to account for zero-inflation & overdispersion
 #glmmTMB sets reference to 1 so we model the probability of not producing a call 
 #vs producing a call- this is inverse of what I want- will change in code farther down
-hur.nb<-glmmTMB(n_minute ~ behavior + calf_presence + group_size + tide + (1|encounter),
+
+##Per AB/SC- set log(group size) to allow distribution of group size and calling rate
+hur.mod<-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
              ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total)
 
-summary(hur.nb)
-plot(parameters(hur.nb))
-
-#check residuals
-simulateResiduals(fittedModel = hur.nb, plot = T)
-
-###comparing pois,nb,hur.nb
-#likelihood ratio test
-lrtest(pois,nb,hur.nb)  
-#AIC
-AICtab(pois,nb,hur.nb)   #hur.nb is better model
-
+summary(hur.mod)
+plot(parameters(hur.mod))
+ranef(hur.mod)
 
 #calculate 95% CI
-confint(hur.nb)
+confint(hur.mod)
 
 ###plot coefficients and CI
 #conditional (second part of hurdle- truncated negative binomial)
 hurdle2 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
-                      coefficient=c(0.027,0.820,0.041,1.408),
-                      lower=c(-0.353,-0.006,0.027,0.847),
-                      upper=c(0.407,1.646,0.054,1.969),
+                      coefficient=c(0.043,-0.537,0.699,1.412),
+                      lower=c(-0.400,-1.609,0.444,0.499),
+                      upper=c(0.486,0.535,0.955,2.325),
                       sig=c("no","no","yes","yes")) %>% 
   mutate(variable=as.factor(variable))
 
@@ -318,22 +311,25 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 #####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
 ##conditional model (part two of hurdle)
 #behavior (travel)
-(exp(0.027)-1)*100
+(exp(0.043)-1)*100
 
 #calf presence (yes)
-(exp(0.820)-1)*100
+(exp(-0.537)-1)*100
 
-#group size
-(exp(0.041)-1)*100
+#log(group size)
+(exp(0.699)-1)*100
+#can we exp log(group size)?????????????????
+exp(0.699)
+(exp(2.01174)-1)*100
 
 #tide (flood)
-(exp(1.408)-1)*100
+(exp(1.412)-1)*100
 
 
 
 ### Model diagnostics
 #examining residuals    
-E <- residuals(hur.nb)
+E <- residuals(hur.mod)
 
 #group size
 callrate_total$rate_group_size <- cut(callrate_total$group_size, seq(0, 60, by=10))
@@ -351,7 +347,7 @@ plot(callrate_total$tide, E, xlab="Tide", ylab="Residuals")
 
 
 
-##################### Isolating hurdle part 1 to test which is reference (0 or 1)
+####### Isolating hurdle part 1 to test which is reference (0 or 1)
 #add new column to create 0 and 1
 callrate_total$n_minute2 <- as.numeric(callrate_total$n_minute)
 
@@ -361,7 +357,6 @@ callrate_total$n_minute2[callrate_total$n_minute2>0] <- 1
 #double check this worked and matches counts from original n_minute column
 sum(callrate_total$n_minute2>0)
 sum(callrate_total$n_minute2<1)
-
 
 #test model with just a binomial for first part of hurdle
 zi.hur<-glmmTMB(n_minute2 ~ behavior + calf_presence + group_size + tide + (1|encounter),
@@ -415,54 +410,13 @@ ggplot(data=zi.hur.data,aes(x=coefficient, y=rev(variable), color=sig)) +
 (exp(-0.157)-1)*100
 
 
-######################### Predictions- Hurdle part 1
-#behavior
-plot_predictions(zi.hur, condition="behavior",vcov=TRUE) +
-  theme_classic() +
-  labs(x="Behavior", y="Predicted probability of calling") 
-
-#group size 
-plot_predictions(zi.hur, condition="group_size",vcov=TRUE) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted probability of calling") +
-  scale_y_continuous(breaks=seq(0,1,by=0.25)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
 
 
-#both using predictions then put into ggplot for plot customization
-pred.h1 <- plot_predictions(zi.hur,condition=c("group_size","behavior"),
-                            re.form=NULL,vcov=TRUE, draw=FALSE)
+######################### Predictions
 
-# #with rug
-# ggplot(pred.h1, aes(x = group_size, color = behavior, fill=behavior)) +
-#   geom_line(aes(y = estimate), linewidth = 1) +
-#   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-#   geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
-#   theme_classic() +
-#   labs(x="Group size", y="Predicted probability of calling") +
-#   theme(text=element_text(family="serif", size=20),
-#         axis.text = element_text(size=20),
-#         axis.ticks.length = unit(0.4,"cm")) +
-#   scale_color_manual(values=c("red3","blue3")) +
-#   scale_fill_manual(values=c("red","deepskyblue")) +
-#   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
+###Hurdle part 1 only
+pred.h1 <- plot_predictions(zi.hur,condition=c("group_size","behavior"),re.form=NULL,vcov=TRUE, draw=FALSE)
 
-
-#with raw data points instead of rug
-ggplot() +
-  geom_line(data=pred.h1, aes(x=group_size, y=estimate, color=behavior), linewidth = 1) +
-  geom_ribbon(data=pred.h1, aes(x=group_size, ymin=conf.low, ymax=conf.high, fill=behavior), alpha = 0.1, color=NA) +
-  geom_point(data=callrate_total,aes(x=group_size, y=n_minute2, color=behavior)) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted probability of calling") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("sienna3","darkslategrey")) +
-  scale_fill_manual(values=c("sienna3","darkslategrey")) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
-
-#with jittered points
 ggplot() +
   geom_line(data=pred.h1, aes(x=group_size, y=estimate, color=behavior), linewidth = 1) +
   geom_ribbon(data=pred.h1, aes(x=group_size, ymin=conf.low, ymax=conf.high, fill=behavior), alpha = 0.1, color=NA) +
@@ -478,153 +432,48 @@ ggplot() +
 
 
 
-######################### Predictions- Hurdle part 2
-#group size
-plot_predictions(hur.nb,condition="group_size",vcov=TRUE) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  scale_y_continuous(breaks=seq(0,40,by=10)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=5)) 
-
-#make in ggplot
-pred.gs <- plot_predictions(hur.nb,condition="group_size",vcov=TRUE, draw=FALSE)
-
-#plot
-ggplot(pred.gs, aes(x = group_size)) +
-  geom_line(aes(y = estimate), linewidth = 1) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)")
-
-#tide
-plot_predictions(hur.nb,condition="tide",vcov=TRUE) +
-  theme_classic() +
-  labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
-
-
-#both using predictions then put into ggplot for plot customization
-pred.h2 <- plot_predictions(hur.nb,condition=c("group_size","tide"),
-                            re.form=NULL, vcov=TRUE, draw=FALSE)
-
-ggplot(pred.h2, aes(x = group_size, color = tide, fill = tide)) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-  geom_line(aes(y = estimate), linewidth = 1) +
-  geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("hotpink4","grey30")) +
-  scale_fill_manual(values=c("hotpink4","grey30")) +
-  scale_y_continuous(breaks=seq(0,150,by=25)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
-
-
-
-
-
-
-########### Adding log(group size) for TNB portion of the model (Hurdle part 2)
+###Hurdle part 2 only
 #Truncate data to non-zeros
 callrate_total_trunc <- callrate_total[which(callrate_total$n_minute>0),]
-
-#tide is switched around from call cat model, set ebb as reference level
-callrate_total_trunc$tide <- relevel(callrate_total_trunc$tide,ref = "Ebb")
-levels(callrate_total_trunc$tide) 
 
 #add log(group size)
 callrate_total_trunc$lgroup_size <- log(callrate_total_trunc$group_size)
 
-nb2<-glmmTMB(n_minute ~ behavior + calf_presence + lgroup_size + tide + (1|encounter),
+#run model
+nb.hur<-glmmTMB(n_minute ~ behavior + calf_presence + lgroup_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total_trunc)
 
-summary(nb2)
-ranef(nb2)
-plot(parameters(nb2))
+summary(nb.hur)
+        
+pred.h2 <- plot_predictions(nb.hur,condition=c("lgroup_size","tide"),re.form=NA, vcov=TRUE, draw=FALSE)
 
-
-#calculate 95% CI
-confint(nb2)
-
-###plot coefficients and CI
-#conditional (second part of hurdle- truncated negative binomial)
-hurdle2.2 <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide"),
-                      coefficient=c(0.04282,-0.53717,0.69973,1.41173),
-                      lower=c(-0.4004486,-1.6093171,0.4439716,0.4989139),
-                      upper=c(0.48609652,0.53497778,0.95548433,2.32455091),
-                      sig=c("no","no","yes","yes")) %>% 
-  mutate(variable=as.factor(variable))
-
-#couldn't get behavior to be first so reversed order and will manually change level labels
-ggplot(data=hurdle2.2,aes(x=coefficient, y=rev(variable), color=sig)) +
-  geom_point(size=3.5) +
-  geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
-  geom_vline(xintercept=0,lty=2,lwd=0.7) +
-  theme_classic() +
-  scale_x_continuous(breaks=seq(-4,4,by=1)) +
-  labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="serif", size=20)) +
-  scale_color_manual(values=c("red3","deepskyblue4"))
-
-
-#####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
-#behavior (travel)
-(exp(0.043)-1)*100
-
-#calf presence (yes)
-(exp(-0.537)-1)*100
-
-#log(group size)
-(exp(0.699)-1)*100
-
-#tide (flood)
-(exp(1.412)-1)*100
-
-
-####Predictions
-#group size
-pred.gs <- plot_predictions(nb2,condition="lgroup_size",vcov=TRUE, draw=FALSE)
-
-ggplot(pred.gs, aes(x = exp(lgroup_size))) +
-  geom_line(aes(y = estimate), linewidth = 1) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)")
-
-#tide
-plot_predictions(nb2,condition="tide",vcov=TRUE) +
-  theme_classic() +
-  labs(x="Tide", y="Predicted calling rate (# calls/minute)") 
-
-
-#both predictions then put into ggplot for plot customization
-pred2 <- plot_predictions(nb2,condition=c("lgroup_size","tide"),re.form=NA, vcov=TRUE, draw=FALSE)
-
-# #with rug
-# ggplot(pred2, aes(x = exp(lgroup_size), color = tide, fill = tide)) +
-#   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, color=NA) +
-#   geom_line(aes(y = estimate), linewidth = 1) +
-#   geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
-#   theme_classic() +
-#   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-#   theme(text=element_text(family="serif", size=20),
-#         axis.text = element_text(size=20),
-#         axis.ticks.length = unit(0.4,"cm")) +
-#   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
-#   scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-#   scale_y_continuous(breaks=seq(0,150,by=25)) +
-#   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
-
-#with raw data points 
 ggplot() +
-  geom_line(data=pred2, aes(x=exp(lgroup_size), y=estimate, color=tide), linewidth = 1) +
-  geom_ribbon(data=pred2, aes(x=exp(lgroup_size), ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.1, color=NA) +
-  geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide)) +
+   geom_line(data=pred.h2, aes(x=exp(lgroup_size), y=estimate, color=tide), linewidth = 1) +
+   geom_ribbon(data=pred.h2, aes(x=exp(lgroup_size), ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.07, color=NA) +
+   geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), 
+                     position="jitter",alpha=0.2,size=2) +
+   theme_classic() +
+   labs(x="Group size", y="Predicted group calling rate (# calls/minute)") +
+   theme(text=element_text(family="serif", size=20),
+                axis.text = element_text(size=20),
+                axis.ticks.length = unit(0.4,"cm")) +
+   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
+   scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
+   scale_y_continuous(expand=c(0,0),breaks=seq(0,150,by=25)) +
+   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
+        
+
+###Full Hurdle moel
+pred.full <- plot_predictions(hur.mod,condition=c("group_size","tide"),re.form=NULL, vcov=TRUE, draw=FALSE)
+
+ggplot() +
+  geom_line(data=pred.full,aes(x=group_size,y = estimate, color=tide), linewidth = 1) +
+  geom_ribbon(data=pred.full,aes(x=group_size,ymin = conf.low, ymax = conf.high,fill=tide), alpha = 0.07, color=NA) +
+  geom_point(data=callrate_total,aes(x=group_size, y=n_minute, color=tide), 
+             position="jitter",alpha=0.2,size=2) +
   theme_classic() +
-  labs(x="Group size", y="Predicted group calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  theme(text=element_text(family="serif", size=16),
         axis.text = element_text(size=20),
         axis.ticks.length = unit(0.4,"cm")) +
   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
@@ -632,46 +481,72 @@ ggplot() +
   scale_y_continuous(expand=c(0,0),breaks=seq(0,150,by=25)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
 
-#with jitter points
+
+
+########Individual level calling plots
+##Hurdle part 1
+#function to calculate p (probability of individual calling)
+back.p <- function(estimate,group_size){
+  p <- 1-(1-estimate)^(1/group_size)
+  return(p)
+}
+
+#add column for back.p (probability at individual level)
+pred.h1$back.p <- back.p(pred.h1$estimate,pred.h1$group_size)
+
 ggplot() +
-  geom_line(data=pred2, aes(x=exp(lgroup_size), y=estimate, color=tide), linewidth = 1) +
-  geom_ribbon(data=pred2, aes(x=exp(lgroup_size), ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.05, color=NA) +
-  geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), 
-             position="jitter",alpha=0.3) +
+  geom_line(data=pred.h1, aes(x=group_size, y=back.p, color=behavior), linewidth = 1) +
+  #geom_ribbon(data=pred.h1, aes(x=group_size, ymin=conf.low, ymax=conf.high, fill=behavior), alpha = 0.1, color=NA) +
   theme_classic() +
-  labs(x="Group size", y="Predicted group calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
+  labs(x="Group size", y="Predicted probability of calling") +
+  theme(text=element_text(family="serif", size=15),
         axis.text = element_text(size=20),
         axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,150,by=25)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
+  scale_color_manual(values=c("sienna3","darkslategrey")) +
+  scale_fill_manual(values=c("sienna3","darkslategrey")) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,0.3,by=0.05)) 
 
 
 
-##Individual calling rate
-#prediction estimate/group size
-#add exp(lgroupsize) to unlog group size
-pred2$group_size <- exp(pred2$lgroup_size)
+##Hurdle part 2
+#calculate prediction estimate/group size and add exp(lgroupsize) to unlog group size
+pred.h2$group_size <- exp(pred.h2$lgroup_size)
 
 #calculate individual call rate and low and high conf. 
-pred2$ind.call <- pred2$estimate/pred2$group_size
-pred2$ind.call.low <- pred2$conf.low/pred2$group_size
-pred2$ind.call.high <- pred2$conf.high/pred2$group_size
+pred.h2$ind.call <- pred.h2$estimate/pred.h2$group_size
+pred.h2$ind.call.low <- pred.h2$conf.low/pred.h2$group_size
+pred.h2$ind.call.high <- pred.h2$conf.high/pred.h2$group_size
 
-ggplot(pred2, aes(x = group_size, color = tide, fill = tide)) +
+ggplot(pred.h2, aes(x = group_size, color = tide, fill = tide)) +
   geom_line(aes(y = ind.call), linewidth = 1) +
-  geom_ribbon(aes(ymin = ind.call.low, ymax = ind.call.high), alpha = 0.1, color=NA) +
-  #geom_rug(data=callrate_total, aes(x=group_size),linewidth=1) +
   theme_classic() +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
+  theme(text=element_text(family="serif", size=15),
         axis.text = element_text(size=20),
         axis.ticks.length = unit(0.4,"cm")) +
   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
   scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,10,by=1)) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,5,by=1)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
+
+
+
+##Full hurdle
+pred.full$ind.call <- pred.full$estimate/pred.full$group_size
+
+ggplot(pred.full, aes(x = group_size, color = tide, fill = tide)) +
+  geom_line(aes(y = ind.call), linewidth = 1) +
+  theme_classic() +
+  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  theme(text=element_text(family="serif", size=15),
+        axis.text = element_text(size=20),
+        axis.ticks.length = unit(0.4,"cm")) +
+  scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
+  scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,1,by=0.1)) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
+
+
 
 

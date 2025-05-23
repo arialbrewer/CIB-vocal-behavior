@@ -289,7 +289,6 @@ AIC(mn2,mn3,mn4,mn15)
 #model summary
 summary(mn4)
 
-
 ##calculate 95% CI= (Coef +/- 1.96 * SE).
 #cc for behavior-travel
 -2.469e+00 + 1.96*5.634e-01
