@@ -107,33 +107,6 @@ mill.travel <- read_csv("mill.travel_type.csv") %>%
          call_type=as.factor(call_type)) %>% 
   group_by(transition,encounter)
 
-
-#barplot by call type 
-# ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=call_type)) + 
-#   geom_bar(stat="identity") +
-#   theme_classic() +
-#   geom_vline(xintercept=0, size=0.5,lty=2) +
-#   labs(x="Time", y="Count",fill="Call type") +
-#   scale_y_continuous(expand=c(0,0)) +
-#   xlim(-15,5) +
-#   ggtitle("Milling to traveling") +
-#   theme(plot.title=element_text(hjust=0.5)) +
-#   scale_fill_manual(values=pnw_palette("Bay",n=21)) +
-#   facet_wrap(~call_type)
-
-#barplot by encounter- need to zoom out of -15 to 5 to see encounter 3 and 6
-# ggplot(data=mill.travel, aes(x=t_index,y=num_calls,fill=encounter)) + 
-#   geom_bar(stat="identity") +
-#   theme_classic() +
-#   geom_vline(xintercept=0, size=0.5,lty=2) +
-#   labs(x="Time", y="Count",fill="Encounter") +
-#   scale_y_continuous(expand=c(0,0)) +
-#   xlim(-15,5) +
-#   ggtitle("Milling to traveling") +
-#   theme(plot.title=element_text(hjust=0.5)) +
-#   scale_fill_manual(values=pnw_palette("Bay",n=3)) +
-#   facet_wrap(~call_type)
-
 #Line plot zoomed in with just encounter 4
 pal1 <- c("cyan4")
 mill.travel %>% filter(encounter %in% c(4)) %>% 
@@ -190,33 +163,6 @@ travel.mill <- read_csv("travel.mill_type.csv") %>%
          transition = as.factor(transition),
          call_type=as.factor(call_type)) %>% 
   group_by(transition,encounter)
-
-###Plots- traveling to milling 
-#barplot by call type
-# ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=call_type)) + 
-#   geom_bar(stat="identity") +
-#   theme_classic() +
-#   geom_vline(xintercept=0, size=0.5,lty=2) +
-#   labs(x="Time", y="Count",fill="Call type") +
-#   scale_y_continuous(expand=c(0,0)) +
-#   xlim(-15,5) +
-#   ggtitle("Traveling to milling") +
-#   theme(plot.title=element_text(hjust=0.5)) +
-#   scale_fill_manual(values=pnw_palette("Bay",n=14)) +
-#   facet_wrap(~call_type)
-
-#barplot by encounter
-# ggplot(data=travel.mill, aes(x=t_index,y=num_calls,fill=encounter)) + 
-#   geom_bar(stat="identity") +
-#   theme_classic() +
-#   geom_vline(xintercept=0, size=0.5,lty=2) +
-#   labs(x="Time", y="Count",fill="Encounter") +
-#   scale_y_continuous(expand=c(0,0)) +
-#   xlim(-15,5) +
-#   ggtitle("Traveling to milling") +
-#   theme(plot.title=element_text(hjust=0.5)) +
-#   scale_fill_manual(values=pnw_palette("Bay",n=3)) +
-#   facet_wrap(~call_type)
 
 #Line plot zoomed in
 ggplot(data=travel.mill, aes(x=t_index,y=num_calls,group=encounter,color=encounter)) + 
@@ -294,12 +240,12 @@ mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>%
 ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   labs(x="Time", y="Call type") +
   xlim(-20,5) +
   ggtitle("Milling to traveling") +
-  theme(text=element_text(family="serif", size=18),
-        axis.text = element_text(size=18),
+  theme(text=element_text(family="sans", size=14),
+        axis.text = element_text(size=14),
         axis.ticks.length = unit(0.3,"cm")) +
   scale_fill_manual(values=c("lightsteelblue4")) +
   scale_x_continuous(breaks=seq(-20,5,by=5))
@@ -338,12 +284,12 @@ travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>%
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
-  geom_vline(xintercept=0, size=0.7,lty=2) +
+  geom_vline(xintercept=0, size=1,lty=2) +
   xlim(-20,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
-  theme(text=element_text(family="serif", size=18),
-        axis.text = element_text(size=18),
+  theme(text=element_text(family="sans", size=14),
+        axis.text = element_text(size=15),
         axis.ticks.length = unit(0.3,"cm")) +
   scale_fill_manual(values=c("honeydew3","salmon")) 
 

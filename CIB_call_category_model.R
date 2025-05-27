@@ -57,6 +57,7 @@ x <- cor(callcat_total2[3:7])
 corrplot(x, type="upper",order="hclust",addCoef.col = "black")
 
 
+#############################################Exploratory plots
 ###Exploratory plots
 behavior_type <- callcat_total %>% 
   group_by(behavior) %>% 
@@ -127,16 +128,16 @@ ggplot(data=callcat_total, aes(x=group_size)) +
   labs(x="Group size",y="Count") 
 
 
-###dependent variable
+###dependent variableExplorat
 #call category distribution
 ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
   geom_bar(stat='identity',width=1, color='white')+
   coord_polar("y",start=0)+
   theme_void() + 
-  geom_label(aes(label = labels), size = 6,
+  geom_label(aes(label = labels), size = 8,
              position = position_stack(vjust = 0.5), show.legend = F) +
   labs(fill="Call category") +
-  theme(text=element_text(family="serif", size=15)) +
+  theme(text=element_text(family="sans", size=15)) +
   scale_fill_manual(values=c("gold2","darkseagreen","cyan4")) 
 
 
@@ -189,6 +190,8 @@ ggplot(data=callcat_groupsize, aes(x=group_size,y=number,fill=call_category)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=5)) +
   scale_y_continuous(expand=c(0,0)) +
   scale_fill_manual(values=c("gold2","darkseagreen","cyan4"))
+
+###############################################################
 
 
 
@@ -357,13 +360,13 @@ cc_summ <- data.frame(variable=c("Behavior","Group size","Tide"),
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
 ggplot(data=cc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
-  geom_point(size=3.5) +
+  geom_point(size=4) +
   geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
-  geom_vline(xintercept=0,lty=2,lwd=0.7) +
+  geom_vline(xintercept=0,lty=2,lwd=1) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="serif", size=20)) +
+  theme(text=element_text(family="sans", size=20),axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
@@ -377,13 +380,13 @@ pc_summ <- data.frame(variable=c("Behavior","Calf presence","Group size","Tide")
 
 #couldn't get behavior to be first so reversed order and will manually change level labels
 ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
-  geom_point(size=3.5) +
+  geom_point(size=4) +
   geom_pointrange(aes(xmin=lower,xmax=upper),lwd=1) +
-  geom_vline(xintercept=0,lty=2,lwd=0.7) +
+  geom_vline(xintercept=0,lty=2,lwd=1) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="serif", size=20)) +
+  theme(text=element_text(family="sans", size=20), axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
@@ -438,12 +441,13 @@ pred.behav <- plot_predictions(mn4,condition="behavior",vcov=TRUE,draw=FALSE)
 
 ggplot(pred.behav, aes(x = behavior)) +
   facet_wrap(~group) +
-  geom_pointrange(aes(y=estimate,ymin=conf.low,ymax=conf.high),lwd=1) +
+  geom_pointrange(aes(y=estimate, ymin=conf.low, ymax=conf.high), lwd=1, size=1) +
   theme_classic() +
-  labs(x="Behavior", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=20),
+  labs(x="Behavior", y="Probability") +
+  theme(text=element_text(family="sans", size=20),
         axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
+        axis.line=element_line(colour='black', size=1),
         panel.spacing = unit(0.3,"cm"))
 
 
@@ -452,12 +456,13 @@ pred.calf <- plot_predictions(mn4,condition="calf_presence",vcov=TRUE,draw=FALSE
 
 ggplot(pred.calf, aes(x = calf_presence)) +
   facet_wrap(~group) +
-  geom_pointrange(aes(y=estimate,ymin=conf.low,ymax=conf.high),lwd=1) +
+  geom_pointrange(aes(y=estimate, ymin=conf.low, ymax=conf.high), lwd=1, size=1) +
   theme_classic() +
-  labs(x="Calf presence", y="Predicted probability") +
-  theme(text=element_text(family="serif", size=20),
+  labs(x="Calf presence", y="Probability") +
+  theme(text=element_text(family="sans", size=20),
         axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
+        axis.line=element_line(colour='black', size=1),
         panel.spacing = unit(0.3,"cm"))
 
 
