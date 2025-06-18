@@ -57,7 +57,7 @@ x <- cor(callcat_total2[3:7])
 corrplot(x, type="upper",order="hclust",addCoef.col = "black")
 
 
-#############################################Exploratory plots
+########################################################
 ###Exploratory plots
 behavior_type <- callcat_total %>% 
   group_by(behavior) %>% 
@@ -366,7 +366,9 @@ ggplot(data=cc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="sans", size=20),axis.line=element_line(colour='black', size=1)) +
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=24),
+        axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
@@ -386,7 +388,9 @@ ggplot(data=pc_summ,aes(x=coefficient, y=rev(variable), color=sig)) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="sans", size=20), axis.line=element_line(colour='black', size=1)) +
+  theme(text=element_text(family="sans"), 
+        axis.text = element_text(size=24),
+        axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
@@ -448,7 +452,8 @@ ggplot(pred.behav, aes(x = behavior)) +
         axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
         axis.line=element_line(colour='black', size=1),
-        panel.spacing = unit(0.3,"cm"))
+        panel.spacing = unit(0.3,"cm")) +
+  ylim(0,1)
 
 
 #calf presence

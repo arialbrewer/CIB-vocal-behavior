@@ -244,8 +244,8 @@ ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   labs(x="Time", y="Call type") +
   xlim(-20,5) +
   ggtitle("Milling to traveling") +
-  theme(text=element_text(family="sans", size=14),
-        axis.text = element_text(size=14),
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=18),
         axis.ticks.length = unit(0.3,"cm")) +
   scale_fill_manual(values=c("lightsteelblue4")) +
   scale_x_continuous(breaks=seq(-20,5,by=5))
@@ -288,8 +288,8 @@ ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
   xlim(-20,5) +
   labs(x="Time", y="Call type") +
   ggtitle("Traveling to milling") +
-  theme(text=element_text(family="sans", size=14),
-        axis.text = element_text(size=15),
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=18),
         axis.ticks.length = unit(0.3,"cm")) +
   scale_fill_manual(values=c("honeydew3","salmon")) 
 
