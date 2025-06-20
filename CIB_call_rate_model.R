@@ -304,7 +304,9 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="sans", size=20),axis.line=element_line(colour='black', size=1)) +
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=24),
+        axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
@@ -317,9 +319,6 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 #calf presence (yes)
 (exp(-0.537)-1)*100
 
-#log(group size)
-(exp(0.699)-1)*100
-#can we exp log(group size)?????????????????
 exp(0.699)
 (exp(2.01174)-1)*100
 
@@ -392,7 +391,9 @@ ggplot(data=zi.hur.data,aes(x=coefficient, y=rev(variable), color=sig)) +
   theme_classic() +
   scale_x_continuous(breaks=seq(-4,4,by=1)) +
   labs(x="Coefficient", y=" Variable", color="Significant") +
-  theme(text=element_text(family="sans", size=20),axis.line=element_line(colour='black', size=1)) +
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=24),
+        axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
@@ -427,13 +428,14 @@ ggplot() +
   geom_jitter(data=callrate_total,aes(x=group_size, y=n_minute2, color=behavior),height=0.001,alpha=0.05,size=2) +
   theme_classic() +
   labs(x="Group size", y="Predicted probability of calling") +
-  theme(text=element_text(family="sans", size=16),
-        axis.text = element_text(size=20),
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
         axis.line=element_line(colour='black', linewidth=1)) +
   scale_color_manual(values=c("sienna3","darkolivegreen")) +
   scale_fill_manual(values=c("sienna3","darkolivegreen")) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10)) 
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
+
 
 
 
@@ -457,14 +459,13 @@ ggplot() +
                      position="jitter",alpha=0.4,size=2) +
    theme_classic() +
    labs(x="Group size", y="Predicted group calling rate (# calls/minute)") +
-   theme(text=element_text(family="sans", size=16),
-                axis.text = element_text(size=20),
+   theme(text=element_text(family="sans"),
+                axis.text = element_text(size=22),
                 axis.ticks.length = unit(0.4,"cm"),
                 axis.line=element_line(colour='black', size=1)) +
    scale_color_manual(values=c("peachpuff3","darkslategray")) +
    scale_fill_manual(values=c("peachpuff3","darkslategray")) +
    scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
-        
 
 
 #####Full Hurdle model
@@ -477,8 +478,8 @@ ggplot() +
              position="jitter",alpha=0.2,size=2) +
   theme_classic() +
   labs(x="Group size", y="Calling rate (# calls/minute)") +
-  theme(text=element_text(family="sans", size=16),
-        axis.text = element_text(size=20),
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
         axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
@@ -516,7 +517,7 @@ back.p.raw <- function(n_minute2,group_size){
 #new dataframe with counts of 0s and 1s at each group size
 df.raw <- callrate_total %>% 
   select(group_size,n_minute2,behavior) %>% 
-  group_by(group_size,behavior) %>% 
+  group_by(behavior) %>% 
   count(group_size,n_minute2) %>% 
   mutate(n_minute2=ifelse(n_minute2 == 0, "no","yes")) %>% 
   tidyr::spread(n_minute2, n) %>% 
@@ -542,8 +543,8 @@ ggplot() +
   geom_point(data=df.raw,aes(x=group_size, y=back.p, color=behavior),alpha=0.7,size=2) +
   theme_classic() +
   labs(x="Group size", y="Probability of calling") +
-  theme(text=element_text(family="sans", size=16),
-        axis.text = element_text(size=20),
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
         axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("sienna3","darkolivegreen")) +
@@ -573,13 +574,12 @@ ggplot() +
              position="jitter",alpha=0.4,size=2) +
   theme_classic() +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  theme(text=element_text(family="sans", size=16),
-        axis.text = element_text(size=20),
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
         axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("peachpuff3","darkslategray")) +
   scale_fill_manual(values=c("peachpuff3","darkslategray")) +
-  scale_y_continuous(breaks=seq(0,8,by=2)) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
 
 
@@ -596,6 +596,7 @@ pred.full$ind.call.low <- ifelse(pred.full$ind.call.low<0,0,pred.full$ind.call.l
 
 callrate_total$raw.N <- callrate_total$n_minute/callrate_total$group_size
 
+#zoomed in to see curves
 ggplot() +
   geom_line(data=pred.full,aes(x=group_size, y=ind.call, color=interaction(behavior,tide)), linewidth=1.75) +
   geom_ribbon(data=pred.full,aes(x=group_size, ymin=ind.call.low, ymax=ind.call.high, fill=interaction(behavior,tide)), alpha = 0.08, color=NA) +
@@ -603,14 +604,31 @@ ggplot() +
              position="jitter",alpha=0.3,size=2) +
   theme_classic() +
   labs(x="Group size", y="Calling rate (# calls/minute)") +
-  theme(text=element_text(family="sans", size=16),
-        axis.text = element_text(size=20),
+  theme(text=element_text(family="sans",size=4),
+        axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
         axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
   scale_fill_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) +
-  scale_y_continuous(breaks=seq(0,6,by=2)) 
+  ylim(0,2)
+
+
+#zoomed out for full plot
+ggplot() +
+  geom_line(data=pred.full,aes(x=group_size, y=ind.call, color=interaction(behavior,tide)), linewidth=1.75) +
+  geom_ribbon(data=pred.full,aes(x=group_size, ymin=ind.call.low, ymax=ind.call.high, fill=interaction(behavior,tide)), alpha = 0.08, color=NA) +
+  geom_point(data=callrate_total,aes(x=group_size, y=raw.N,color=interaction(behavior,tide)),
+             position="jitter",alpha=0.3,size=2) +
+  theme_classic() +
+  labs(x="Group size", y="Calling rate (# calls/minute)") +
+  theme(text=element_text(family="sans",size=4),
+        axis.text = element_text(size=24),
+        axis.ticks.length = unit(0.4,"cm"),
+        axis.line=element_line(colour='black', size=1)) +
+  scale_color_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
+  scale_fill_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
 
 
 
