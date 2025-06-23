@@ -275,7 +275,8 @@ lrtest(pois,nb)   #nb is better model
 #glmmTMB sets reference to 1 so we model the probability of not producing a call 
 #vs producing a call- this is inverse of what I want- will change in code farther down
 
-##Per AB/SC- set log(group size) to allow distribution of group size and calling rate
+#Using log(group size) so we can model group size as a power function instead of exponential 
+#to capture sublinear, linear, or superlinear scaling 
 hur.mod<-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + (1|encounter),
              ziformula= ~ behavior + calf_presence + group_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total)
@@ -311,20 +312,19 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 
 
-#####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
+#####calculating changes in variables with effect on calling rate
 ##conditional model (part two of hurdle)
 #behavior (travel)
-(exp(0.043)-1)*100
+exp(0.043)
 
 #calf presence (yes)
-(exp(-0.537)-1)*100
+exp(-0.537)
 
+#log(group size)
 exp(0.699)
-(exp(2.01174)-1)*100
 
 #tide (flood)
-(exp(1.412)-1)*100
-
+exp(1.412)
 
 
 ### Model diagnostics
@@ -465,7 +465,7 @@ ggplot() +
                 axis.line=element_line(colour='black', size=1)) +
    scale_color_manual(values=c("peachpuff3","darkslategray")) +
    scale_fill_manual(values=c("peachpuff3","darkslategray")) +
-   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
+   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
 
 
 #####Full Hurdle model
