@@ -14,6 +14,7 @@ library(bbmle)
 library(viridis)
 library(lmtest)
 library(marginaleffects)
+library(plotrix)
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -314,17 +315,15 @@ ggplot(data=hurdle2,aes(x=coefficient, y=rev(variable), color=sig)) +
 
 #####calculating changes in variables with effect on calling rate
 ##conditional model (part two of hurdle)
-#behavior (travel)
-exp(0.043)
-
-#calf presence (yes)
-exp(-0.537)
-
-#log(group size)
-exp(0.699)
 
 #tide (flood)
-exp(1.412)
+exp(1.41173)
+
+#calculate SE of tide beta using model output
+#SE(exp(beta)) = (SE(beta)^2 * exp(beta)^2)^(1/2) 
+summary(hur.mod)
+((0.46573)^2 * exp(1.41173)^2)^(1/2) 
+
 
 
 ### Model diagnostics
@@ -397,7 +396,7 @@ ggplot(data=zi.hur.data,aes(x=coefficient, y=rev(variable), color=sig)) +
   scale_color_manual(values=c("red3","deepskyblue4"))
 
 
-#####calculating odds percentage from coefficients- [(exp(coef)-1)*100]
+#####calculating odds (percentage) from coefficients- [(exp(coef)-1)*100]
 ### ZI model (part one of hurdle)
 #behavior (travel)
 (exp(0.804)-1)*100
@@ -438,7 +437,6 @@ ggplot() +
 
 
 
-
 #####Hurdle part 2 only
 #Truncate data to non-zeros
 callrate_total_trunc <- callrate_total[which(callrate_total$n_minute>0),]
@@ -466,6 +464,7 @@ ggplot() +
    scale_color_manual(values=c("peachpuff3","darkslategray")) +
    scale_fill_manual(values=c("peachpuff3","darkslategray")) +
    scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
+
 
 
 #####Full Hurdle model
