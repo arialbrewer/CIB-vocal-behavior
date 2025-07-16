@@ -22,7 +22,7 @@ acoustic_data <- acoustic_files %>%
 behavior_data <- behavior_files %>%  
   map(read_csv) %>% 
   reduce(rbind) %>% 
-  dplyr::select(-sample_round,-group_number,-dot,-count_white,-count_gray,-count_calf,-comments)
+  dplyr::select(-sample_round,-group_number,-dot,-comments,-count_white,-count_gray,-count_calf)
 
 #combine behavioral & acoustic data and remove NAs
 callcat_total <- behavior_data %>% 
