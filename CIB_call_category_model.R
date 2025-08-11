@@ -128,7 +128,7 @@ ggplot(data=callcat_total, aes(x=group_size)) +
   labs(x="Group size",y="Count") 
 
 
-###dependent variableExplorat
+###dependent variable
 #call category distribution
 ggplot(data=callcat_type, aes(x="", y=number,fill=call_category)) +
   geom_bar(stat='identity',width=1, color='white')+
@@ -210,7 +210,6 @@ levels(callcat_total$call_category)
 levels(callcat_total$behavior)
 levels(callcat_total$calf_presence)
 levels(callcat_total$tide)
-
 
 #categories must be coded 0 to K
 all(callcat_total$call_category2 %in% c(0L, 1L, 2L))

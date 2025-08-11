@@ -4,17 +4,12 @@
 #load packages
 library(tidyverse)
 library(corrplot)
-library(patchwork)
 library(performance)
 library(parameters)
-library(DHARMa)
 library(glmmTMB)
 library(lme4)
-library(bbmle) 
 library(viridis)
-library(lmtest)
 library(marginaleffects)
-library(plotrix)
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -214,7 +209,7 @@ levels(callrate_total$behavior)
 levels(callrate_total$calf_presence)
 levels(callrate_total$tide) 
 
-#tide is switched around from call cat model, set ebb as reference level
+#tide is switched around from call category model, set ebb as reference level
 callrate_total$tide <- relevel(callrate_total$tide,ref = "Ebb")
 levels(callrate_total$tide) 
 
@@ -224,28 +219,13 @@ pois<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encou
 
 summary(pois)
 
-#test for overdispersion (from Bolker 2024)
-overdisp_fun <- function(model) {
-  rdf <- df.residual(model)
-  rp <- residuals(model,type="pearson")
-  Pearson.chisq <- sum(rp^2)
-  prat <- Pearson.chisq/rdf
-  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
-  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
-}
 
-overdisp_fun(pois)   #model is overdispersed
-
-#check overdispersion parameter manually (X2/df.resid) 
-#Overdispersed > 1
-sum(residuals(pois,type="pearson")^2)/1045 
-
-#Chi2 Goodness of fit test 
-#null hypothesis= model is correctly specified
+#Goodness of fit test to test for overdispersion. Null hypothesis= model is correctly specified
 X2 <- sum((callrate_total$n_minute - fitted(pois))^2 / fitted(pois))
 df <- length(callrate_total$n_minute)-length(coef(pois))
 pchisq(X2, df,lower.tail = FALSE)
 #reject null- model not a good fit
+
 
 ###Negative binomial model to account for overdispersion
 nb<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encounter),
@@ -253,23 +233,12 @@ nb<-glmmTMB(n_minute ~ behavior + group_size + calf_presence + tide + (1|encount
 
 summary(nb)
 
-#check overdispersion
-overdisp_fun(nb)    #model is no longer overdispersed
 
-#check overdispersion parameter manually (X2/df.resid) Overdispersed > 1
-sum(residuals(nb,type="pearson")^2)/1044 
-
-#Chi2 Goodness of fit test
-#null hypothesis= model is correctly specified
+#Another Goodness of fit test to see if zero-inflation is occurring
 X2 <- sum((callrate_total$n_minute - fitted(nb))^2 / fitted(nb))
 df <- length(callrate_total$n_minute)-length(coef(nb))
 pchisq(X2, df,lower.tail = FALSE)
 #reject null- model still not a good fit- we still have zero-inflation
-
-###comparing pois and nb models
-#likelihood ratio test
-lrtest(pois,nb)   #nb is better model
-
 
 
 ###Negative Binomial Hurdle Model to account for zero-inflation & overdispersion
@@ -285,6 +254,7 @@ hur.mod<-glmmTMB(n_minute ~ behavior + calf_presence + log(group_size) + tide + 
 summary(hur.mod)
 plot(parameters(hur.mod))
 ranef(hur.mod)
+
 
 #calculate 95% CI
 confint(hur.mod)
@@ -448,6 +418,9 @@ callrate_total_trunc$lgroup_size <- log(callrate_total_trunc$group_size)
 nb.hur<-glmmTMB(n_minute ~ behavior + calf_presence + lgroup_size + tide + (1|encounter),
              family=truncated_nbinom2, data=callrate_total_trunc)
         
+
+summary(nb.hur)
+
 pred.h2 <- plot_predictions(nb.hur,condition=c("lgroup_size","tide"),re.form=NA, vcov=TRUE, draw=FALSE)
 
 ggplot() +
@@ -505,7 +478,6 @@ pred.h1$back.p.high <- back.p1(pred.h1$conf.high,pred.h1$group_size)
 
 #update so predictions can't go above plot limit
 pred.h1$back.p.high <- ifelse(pred.h1$back.p.high>0.999,0.35,pred.h1$back.p.high)
-
 
 #calculate prob of calling for raw data and divide by group size
 back.p.raw <- function(n_minute2,group_size){
@@ -580,6 +552,7 @@ ggplot() +
   scale_color_manual(values=c("peachpuff3","darkslategray")) +
   scale_fill_manual(values=c("peachpuff3","darkslategray")) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,60,by=10))
+
 
 
 
