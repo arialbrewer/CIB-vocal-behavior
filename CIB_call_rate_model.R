@@ -438,6 +438,9 @@ ggplot() +
    scale_fill_manual(values=c("peachpuff3","darkslategray")) +
    scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
 
+#save csv
+#write_csv(pred.h2,"C:/Users/arial/Desktop/Ch.2 Vocal behavior/CIB vocal behavior code/pred.h2.csv")
+
 
 
 #####Full Hurdle model

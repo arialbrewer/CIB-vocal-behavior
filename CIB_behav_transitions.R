@@ -236,7 +236,7 @@ mill.travel_ridge <- read.csv("mill.travel_ridge.csv") %>%
 #   scale_fill_manual(values=c("lightsteelblue4","honeydew3")) +
 #   scale_x_continuous(breaks=seq(-20,5,by=5))
 
-#plot
+#plot- fill by encounter
 ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
@@ -248,6 +248,20 @@ ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
         axis.text = element_text(size=18),
         axis.ticks.length = unit(0.3,"cm")) +
   scale_fill_manual(values=c("lightsteelblue4")) +
+  scale_x_continuous(breaks=seq(-20,5,by=5))
+
+#plot- fill by call category
+ggplot(mill.travel_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
+  geom_density_ridges(scale=2,alpha=0.7) +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=1,lty=2) +
+  labs(x="Time", y="Call type") +
+  xlim(-20,5) +
+  ggtitle("Milling to traveling") +
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=18),
+        axis.ticks.length = unit(0.3,"cm")) +
+  scale_fill_manual(values=c("gold2","darkseagreen","cyan4")) +
   scale_x_continuous(breaks=seq(-20,5,by=5))
 
 
@@ -280,7 +294,7 @@ travel.mill_ridge <- read_csv("travel.mill_ridge.csv") %>%
 #   scale_fill_manual(values=c("honeydew3","salmon"))
 
 
-#plot
+#plot- fill by encounter
 ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=encounter)) +
   geom_density_ridges(scale=2,alpha=0.7) +
   theme_ridges(grid=F) +
@@ -292,5 +306,21 @@ ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
         axis.text = element_text(size=18),
         axis.ticks.length = unit(0.3,"cm")) +
   scale_fill_manual(values=c("honeydew3","salmon")) 
+
+
+#plot- fill by call category
+ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill=call_category)) +
+  geom_density_ridges(scale=2,alpha=0.7) +
+  theme_ridges(grid=F) +
+  geom_vline(xintercept=0, size=1,lty=2) +
+  xlim(-20,5) +
+  labs(x="Time", y="Call type") +
+  ggtitle("Traveling to milling") +
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=18),
+        axis.ticks.length = unit(0.3,"cm")) +
+  scale_fill_manual(values=c("darkseagreen","cyan4")) 
+
+
 
 

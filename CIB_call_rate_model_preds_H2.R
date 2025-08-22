@@ -1,9 +1,8 @@
-#Manual model predictions for calling rate with help from S.Converse
+###A.Brewer and S.Converse- CIB calling rate model predictions (Hurdle model part 2- truncated neg.bin.)
 
 #load packages
 library(tidyverse)
 library(glmmTMB)
-
 
 #load data
 setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
@@ -35,7 +34,7 @@ callrate_total <- data_total %>%
          tide = as.factor(tide),
          encounter = as.factor(encounter))
 
-#check levels of covariates
+#check levels of covariates 
 levels(callrate_total$behavior) 
 levels(callrate_total$calf_presence) 
 levels(callrate_total$tide) 
@@ -44,7 +43,7 @@ levels(callrate_total$tide)
 callrate_total$tide <- relevel(callrate_total$tide,ref = "Ebb")
 levels(callrate_total$tide) 
 
-#just work with non-zero data
+#include only non-zero data
 callrate_total_trunc <- callrate_total[which(callrate_total$n_minute>0),]
 
 #create log group size in the dataset 
@@ -55,7 +54,7 @@ nb2<-glmmTMB(n_minute ~ behavior + calf_presence + lgroup_size + tide + (1|encou
 
 summary(nb2)
 
-VarCorr(nb2)
+#save random effect variance
 sigma.obs <- VarCorr(nb2)$cond$encounter[1]
 
 #set up a new data frame with values we want for predictions 
@@ -69,15 +68,19 @@ newData1$lgroup_size <- log(newData1$group_size)
 #bootstrap to get uncertainty around predictions  
 #store summary data 
 summary <- matrix(NA,nrow = nrow(newData1), ncol=4)
+
 #do at least 1000, possibly more (10000 if you can - not sure how long it will take)
 boots <- 100
+
 #store predictions 
 yest <- matrix(NA,nrow=nrow(newData1),ncol=boots)
+
 #simulate from the model (parametric bootstrap) and then rerun the model with the new data
+#type="link" for log space, type="response" for normal space
 for(i in 1:boots){
   y.sim <- unlist(simulate(nb2))
   ymod <- update(nb2,y.sim ~ ., y.sim ~ .)
-  yest[,i] <- predict(ymod,newdata = newData1, type="response", re.form=NA)+rnorm(1,0,sigma.obs)
+  yest[,i] <- predict(ymod,newdata = newData1, type="link", re.form=NA) + rnorm(1,0,sigma.obs)
 }
 
 #summarize 
@@ -92,7 +95,7 @@ for(i in 1:nrow(newData1)){
 
 #sarah plot
 #first group of 53 are with Flood tide, second group of 53 are with Ebb tide  
-plot(newData1$group_size[1:53],summary[1:53,1],type="l",col="red",xlim=c(0,55),ylim=c(0,350))
+plot(newData1$group_size[1:53],summary[1:53,1],type="l",col="red",xlim=c(0,10),ylim=c(0,10))
 lines(newData1$group_size[1:53],summary[1:53,2],lty="dashed",col="red")
 lines(newData1$group_size[1:53],summary[1:53,3],lty="dashed",col="red")
 lines(newData1$group_size[54:106],summary[54:106,1],type="l",col="blue")
@@ -100,48 +103,60 @@ lines(newData1$group_size[54:106],summary[54:106,2],lty="dashed",col="blue")
 lines(newData1$group_size[54:106],summary[54:106,3],lty="dashed",col="blue")
 
 
-#my additions and ggplot
+#Arial made into ggplot
 summary <- as.data.frame(summary)
 colnames(summary) <- c("mean","conf.low","conf.high","sd")
 
 #combine newData and summary
 data <- cbind(newData1,summary)
 
+
+#predictions on link  
 ggplot() +
   geom_line(data=data, aes(x=exp(lgroup_size), y=mean, color=tide), linewidth = 1) +
   geom_ribbon(data=data, aes(x=exp(lgroup_size), ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.05, color=NA) +
-  geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), 
-             position="jitter",alpha=0.3) +
+  #geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), position="jitter",alpha=0.3) +
   theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
-  theme(text=element_text(family="serif", size=20),
-        axis.text = element_text(size=20),
+  labs(x="Group size", y="log(Predicted calling rate)") +
+  theme(text=element_text(family="sans", size=16),
+        axis.text = element_text(size=16),
         axis.ticks.length = unit(0.4,"cm")) +
   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
   scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,350,by=50)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,6,by=1)) +
+  scale_x_continuous(expand=c(0,0))
 
 
-#without confidence intervals
+#predictions exponentiated out of log space 
 ggplot() +
-  geom_line(data=data, aes(x=exp(lgroup_size), y=mean, color=tide), linewidth = 1) +
+  geom_line(data=data, aes(x=exp(lgroup_size), y=exp(mean), color=tide), linewidth = 1) +
+  geom_ribbon(data=data, aes(x=exp(lgroup_size), ymin=exp(conf.low), ymax=exp(conf.high), fill=tide), alpha = 0.05, color=NA) +
+  #geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), position="jitter",alpha=0.3) +
   theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  labs(x="Group size", y="Predicted calling rate") +
+  theme(text=element_text(family="sans", size=16),
+        axis.text = element_text(size=16),
+        axis.ticks.length = unit(0.4,"cm")) +
   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,110,by=10)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=5))
+  scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,300,by=50)) +
+  scale_x_continuous(expand=c(0,0))
 
 
-#look at individual calling rate by dividing model estimates by group size
-data$ind.mean <- data$mean/data$group_size
-
-#plot
+#log-log space to check that both are straight lines
 ggplot() +
-  geom_line(data=data, aes(x=exp(lgroup_size), y=ind.mean, color=tide), linewidth = 1) +
+  geom_line(data=data, aes(x=lgroup_size, y=mean, color=tide), linewidth = 1) +
+  geom_ribbon(data=data, aes(x=lgroup_size, ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.05, color=NA) +
   theme_classic() +
-  labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
+  labs(x="log(Group size)", y="log(Predicted calling rate)") +
+  theme(text=element_text(family="sans", size=16),
+        axis.text = element_text(size=16),
+        axis.ticks.length = unit(0.4,"cm")) +
   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,10,by=2)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=5))
+  scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(expand=c(0,0))
+
+
+
 
