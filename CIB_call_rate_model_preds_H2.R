@@ -70,7 +70,7 @@ newData1$lgroup_size <- log(newData1$group_size)
 summary <- matrix(NA,nrow = nrow(newData1), ncol=4)
 
 #do at least 1000, possibly more (10000 if you can - not sure how long it will take)
-boots <- 100
+boots <- 50
 
 #store predictions 
 yest <- matrix(NA,nrow=nrow(newData1),ncol=boots)
@@ -80,7 +80,7 @@ yest <- matrix(NA,nrow=nrow(newData1),ncol=boots)
 for(i in 1:boots){
   y.sim <- unlist(simulate(nb2))
   ymod <- update(nb2,y.sim ~ ., y.sim ~ .)
-  yest[,i] <- predict(ymod,newdata = newData1, type="link", re.form=NA) + rnorm(1,0,sigma.obs)
+  yest[,i] <- predict(ymod,newdata = newData1, type="link", re.form=NA) + rnorm(1,1,sigma.obs)
 }
 
 #summarize 
@@ -111,7 +111,7 @@ colnames(summary) <- c("mean","conf.low","conf.high","sd")
 data <- cbind(newData1,summary)
 
 
-#predictions on link  
+#predictions on link scale
 ggplot() +
   geom_line(data=data, aes(x=exp(lgroup_size), y=mean, color=tide), linewidth = 1) +
   geom_ribbon(data=data, aes(x=exp(lgroup_size), ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.05, color=NA) +
@@ -139,7 +139,7 @@ ggplot() +
         axis.ticks.length = unit(0.4,"cm")) +
   scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
   scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,300,by=50)) +
+  scale_y_continuous(expand=c(0,0),breaks=seq(0,800,by=200)) +
   scale_x_continuous(expand=c(0,0))
 
 

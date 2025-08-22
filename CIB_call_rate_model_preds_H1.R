@@ -93,6 +93,7 @@ length(callrate_total$date)
 length(callrate_total$behavior)
 
 
+
 #summarize 
 for(i in 1:nrow(newData1)){
   summary[i,1] <- mean(yest[i,]) 
