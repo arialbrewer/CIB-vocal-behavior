@@ -46,7 +46,7 @@ levels(callrate_total$tide)
 #include only non-zero data
 callrate_total_trunc <- callrate_total[which(callrate_total$n_minute>0),]
 
-#create log group size in the dataset 
+#create log(group size) in the dataset 
 callrate_total_trunc$lgroup_size <- log(callrate_total_trunc$group_size)
 
 nb2<-glmmTMB(n_minute ~ behavior + calf_presence + lgroup_size + tide + (1|encounter),
@@ -111,7 +111,7 @@ colnames(summary) <- c("mean","conf.low","conf.high","sd")
 data <- cbind(newData1,summary)
 
 
-#predictions on link scale
+#predictions plot on link scale
 ggplot() +
   geom_line(data=data, aes(x=exp(lgroup_size), y=mean, color=tide), linewidth = 1) +
   geom_ribbon(data=data, aes(x=exp(lgroup_size), ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.05, color=NA) +
