@@ -51,19 +51,16 @@ callrate_total$n_minute2 <- as.numeric(callrate_total$n_minute)
 #change non-zeros to 1
 callrate_total$n_minute2[callrate_total$n_minute2>0] <- 1
 
-#double check this worked and matches counts from original n_minute column
-sum(callrate_total$n_minute2>0)
-sum(callrate_total$n_minute2<1)
-
 #Zero-inflated portion of hurdle model (0s and 1s)
-zi.hur<-glmmTMB(n_minute2 ~ behavior + calf_presence + group_size + tide + (1|encounter),
+model1<-glmmTMB(n_minute2 ~ behavior + calf_presence + group_size + tide + (1|encounter),
                 family=binomial(link="logit"), data=callrate_total)
 
-summary(zi.hur)
-ranef(zi.hur)
+summary(model1)
 
 #save random effect variance
-sigma.obs <- VarCorr(zi.hur)$cond$encounter[1]
+var.obs <- VarCorr(model1)$cond$encounter[1]
+sigma.obs <- sqrt(var.obs)
+
 
 #set up a new data frame with values for predictions 
 #note you could choose either "ebb" or "flood"/"yes" or "no" for the third and fourth options
@@ -76,23 +73,18 @@ colnames(newData1) <- c("group_size","behavior","tide","calf_presence")
 summary <- matrix(NA,nrow = nrow(newData1), ncol=4)
 
 #do at least 1000, possibly more (10000 if you can - not sure how long it will take)
-boots <- 50
+boots <- 5
 
 #store predictions 
 yest <- matrix(NA,nrow=nrow(newData1),ncol=boots)
 
 #simulate from the model (parametric bootstrap) and then rerun the model with the new data
 for(i in 1:boots){
-  y.sim <- unlist(simulate(zi.hur))
-  ymod <- update(zi.hur,y.sim ~ ., y.sim ~ .)
-  yest[,i] <- predict(ymod,newdata = newData1, type="response", re.form=NA) + rnorm(1,1,sigma.obs)
+  y.sim <- simulate(model1)    #simulate new response data from model
+  y.sim.ones <- y.sim[[1]][,1]    #only choose column for successes
+  ymod <- update(model1,y.sim.ones ~ .)   #refit model with simulated response
+  yest[,i] <- 1/(1+exp(-(predict(ymod,newdata = newData1, type="link", re.form=NA) + rnorm(1,0,sigma.obs))))  #store predictions and transform out of link space
 }
-
-#getting error but lengths are the same??
-length(callrate_total$date)
-length(callrate_total$behavior)
-
-
 
 #summarize 
 for(i in 1:nrow(newData1)){
@@ -100,9 +92,7 @@ for(i in 1:nrow(newData1)){
   summary[i,2] <- quantile(yest[i,],probs=0.025) 
   summary[i,3] <- quantile(yest[i,],probs=0.975)
   summary[i,4] <- sd(yest[i,])
-  
 }
-
 
 #save output
 summary <- as.data.frame(summary)
@@ -113,20 +103,16 @@ preds <- cbind(newData1,summary)
 
 #plot  
 ggplot() +
-  geom_line(data=preds, aes(x=group_size, y=mean, color=behavior), linewidth = 1) +
-  geom_ribbon(data=preds, aes(x=group_size, ymin=conf.low, ymax=conf.high, fill=behavior), alpha = 0.05, color=NA) +
-  geom_point(data=callrate_total, aes(x=group_size, y=n_minute2, color=behavior), 
-             position="jitter",alpha=0.3) +
+  geom_line(data=preds, aes(x=group_size, y=mean, color=behavior), linewidth = 1.75) +
+  geom_ribbon(data=preds, aes(x=group_size, ymin=conf.low, ymax=conf.high, fill=behavior), alpha = 0.1, color=NA) +
+  geom_jitter(data=callrate_total,aes(x=group_size, y=n_minute2, color=behavior),height=0.001,alpha=0.05,size=2) +
   theme_classic() +
   labs(x="Group size", y="Predicted probability of calling") +
-  theme(text=element_text(family="serif", size=16),
-        axis.text = element_text(size=20),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("sienna3","darkslategrey")) +
-  scale_fill_manual(values=c("sienna3","darkslategrey")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,350,by=50)) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
-
-
-
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=24),
+        axis.ticks.length = unit(0.4,"cm"),
+        axis.line=element_line(colour='black', linewidth=1)) +
+  scale_color_manual(values=c("sienna3","darkolivegreen")) +
+  scale_fill_manual(values=c("sienna3","darkolivegreen")) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
 

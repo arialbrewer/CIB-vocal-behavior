@@ -55,13 +55,17 @@ nb2<-glmmTMB(n_minute ~ behavior + calf_presence + lgroup_size + tide + (1|encou
 summary(nb2)
 
 #save random effect variance
-sigma.obs <- VarCorr(nb2)$cond$encounter[1]
+var.obs <- VarCorr(nb2)$cond$encounter[1]
+sigma.obs <- sqrt(var.obs)
 
 #set up a new data frame with values we want for predictions 
 #note you could choose either "Travel" or "Mill"/"yes" or "no" for the third and fourth options
 #I'm choosing "Mill" and "no" because these coefficients then just drop out of the model predictions 
 newData1 <- as.data.frame(expand.grid(seq(1,53,1),c("Ebb","Flood"),c("Mill"),c("no")))
 colnames(newData1) <- c("group_size","tide","behavior","calf_presence")
+newData1$dummy_tide <- rep(1,nrow(newData1))
+newData1$dummy_tide[which(newData1$tide=="Ebb")] <- 0
+colnames(newData1) <- c("group_size","tide","behavior","calf_presence","dummy_tide")
 #add in the log of group size 
 newData1$lgroup_size <- log(newData1$group_size)
 
@@ -70,17 +74,18 @@ newData1$lgroup_size <- log(newData1$group_size)
 summary <- matrix(NA,nrow = nrow(newData1), ncol=4)
 
 #do at least 1000, possibly more (10000 if you can - not sure how long it will take)
-boots <- 50
+boots <- 5
 
 #store predictions 
 yest <- matrix(NA,nrow=nrow(newData1),ncol=boots)
 
 #simulate from the model (parametric bootstrap) and then rerun the model with the new data
-#type="link" for log space, type="response" for normal space
 for(i in 1:boots){
-  y.sim <- unlist(simulate(nb2))
-  ymod <- update(nb2,y.sim ~ ., y.sim ~ .)
-  yest[,i] <- predict(ymod,newdata = newData1, type="link", re.form=NA) + rnorm(1,1,sigma.obs)
+  y.sim <- unlist(simulate(nb2))  #simulate new response data from model
+  ymod <- update(nb2,y.sim ~ .)   #refit model with simulated response
+  par <- summary(ymod)$coefficients$cond[,1]  #save coefficients to index
+  #yest[,i] <- exp(predict(ymod,newdata = newData1, type="link", re.form=NA) + rnorm(1,0,sigma.obs))  #store predictions and transform out of link space
+  yest[,i] <- exp(rnbinom(n=1, mu=(par[1] + par[4] * newData1[,6] + par[5] * newData1[,5] + rnorm(1,0,sigma.obs)), size=summary(ymod)$sigma))
 }
 
 #summarize 
@@ -92,71 +97,42 @@ for(i in 1:nrow(newData1)){
   
 }
 
-
-#sarah plot
-#first group of 53 are with Flood tide, second group of 53 are with Ebb tide  
-plot(newData1$group_size[1:53],summary[1:53,1],type="l",col="red",xlim=c(0,10),ylim=c(0,10))
-lines(newData1$group_size[1:53],summary[1:53,2],lty="dashed",col="red")
-lines(newData1$group_size[1:53],summary[1:53,3],lty="dashed",col="red")
-lines(newData1$group_size[54:106],summary[54:106,1],type="l",col="blue")
-lines(newData1$group_size[54:106],summary[54:106,2],lty="dashed",col="blue")
-lines(newData1$group_size[54:106],summary[54:106,3],lty="dashed",col="blue")
-
-
-#Arial made into ggplot
+#save as dataframe and rename columns
 summary <- as.data.frame(summary)
 colnames(summary) <- c("mean","conf.low","conf.high","sd")
 
 #combine newData and summary
-data <- cbind(newData1,summary)
+preds <- cbind(newData1,summary)
 
 
-#predictions plot on link scale
+#predictions plot in linear space
 ggplot() +
-  geom_line(data=data, aes(x=exp(lgroup_size), y=mean, color=tide), linewidth = 1) +
-  geom_ribbon(data=data, aes(x=exp(lgroup_size), ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.05, color=NA) +
-  #geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), position="jitter",alpha=0.3) +
+  geom_line(data=preds, aes(x=group_size, y=mean, color=tide), linewidth = 1.75) +
+  geom_ribbon(data=preds, aes(x=group_size, ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.1, color=NA) +
+  geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), position="jitter",alpha=0.4,size=2) +
   theme_classic() +
-  labs(x="Group size", y="log(Predicted calling rate)") +
-  theme(text=element_text(family="sans", size=16),
-        axis.text = element_text(size=16),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,6,by=1)) +
-  scale_x_continuous(expand=c(0,0))
-
-
-#predictions exponentiated out of log space 
-ggplot() +
-  geom_line(data=data, aes(x=exp(lgroup_size), y=exp(mean), color=tide), linewidth = 1) +
-  geom_ribbon(data=data, aes(x=exp(lgroup_size), ymin=exp(conf.low), ymax=exp(conf.high), fill=tide), alpha = 0.05, color=NA) +
-  #geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), position="jitter",alpha=0.3) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted calling rate") +
-  theme(text=element_text(family="sans", size=16),
-        axis.text = element_text(size=16),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,800,by=200)) +
-  scale_x_continuous(expand=c(0,0))
+  labs(x="Group size", y="Predicted group calling rate (# calls/minute)") +
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=22),
+        axis.ticks.length = unit(0.4,"cm"),
+        axis.line=element_line(colour='black', size=1)) +
+  scale_color_manual(values=c("peachpuff3","darkslategray")) +
+  scale_fill_manual(values=c("peachpuff3","darkslategray")) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
 
 
 #log-log space to check that both are straight lines
 ggplot() +
-  geom_line(data=data, aes(x=lgroup_size, y=mean, color=tide), linewidth = 1) +
-  geom_ribbon(data=data, aes(x=lgroup_size, ymin=conf.low, ymax=conf.high, fill=tide), alpha = 0.05, color=NA) +
+  geom_line(data=preds, aes(x=lgroup_size, y=log(mean), color=tide), linewidth = 1.75) +
+  #geom_ribbon(data=preds, aes(x=lgroup_size, ymin=log(conf.low), ymax=log(conf.high), fill=tide), alpha = 0.1, color=NA) +
+  #geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), position="jitter",alpha=0.4,size=2) +
   theme_classic() +
-  labs(x="log(Group size)", y="log(Predicted calling rate)") +
-  theme(text=element_text(family="sans", size=16),
-        axis.text = element_text(size=16),
-        axis.ticks.length = unit(0.4,"cm")) +
-  scale_color_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_fill_manual(values=c("darkgoldenrod","darkcyan")) +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_continuous(expand=c(0,0))
-
-
+  labs(x="Group size", y="Predicted group calling rate (# calls/minute)") +
+  theme(text=element_text(family="sans"),
+        axis.text = element_text(size=22),
+        axis.ticks.length = unit(0.4,"cm"),
+        axis.line=element_line(colour='black', size=1)) +
+  scale_color_manual(values=c("peachpuff3","darkslategray")) +
+  scale_fill_manual(values=c("peachpuff3","darkslategray")) 
 
 
