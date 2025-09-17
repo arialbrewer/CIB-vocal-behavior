@@ -64,8 +64,7 @@ sigma.obs <- sqrt(var.obs)
 
 #set up a new data frame with values for predictions 
 #note you could choose either "ebb" or "flood"/"yes" or "no" for the third and fourth options
-#I'm choosing "ebb" and "no" because these coefficients then just drop out of the model predictions 
-newData1 <- as.data.frame(expand.grid(seq(1,53,1),c("Mill","Travel"),c("Ebb"),c("no")))
+newData1 <- as.data.frame(expand.grid(seq(1,53,1),c("Mill","Travel"),c("Ebb"),c("yes")))
 colnames(newData1) <- c("group_size","behavior","tide","calf_presence")
 
 ###bootstrap to get uncertainty around predictions  
@@ -73,7 +72,7 @@ colnames(newData1) <- c("group_size","behavior","tide","calf_presence")
 summary <- matrix(NA,nrow = nrow(newData1), ncol=4)
 
 #do at least 1000, possibly more (10000 if you can - not sure how long it will take)
-boots <- 5
+boots <- 100
 
 #store predictions 
 yest <- matrix(NA,nrow=nrow(newData1),ncol=boots)

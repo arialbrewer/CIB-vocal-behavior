@@ -60,12 +60,12 @@ sigma.obs <- sqrt(var.obs)
 
 #set up a new data frame with values we want for predictions 
 #note you could choose either "Travel" or "Mill"/"yes" or "no" for the third and fourth options
-#I'm choosing "Mill" and "no" because these coefficients then just drop out of the model predictions 
-newData1 <- as.data.frame(expand.grid(seq(1,53,1),c("Ebb","Flood"),c("Mill"),c("no")))
+newData1 <- as.data.frame(expand.grid(seq(1,53,1),c("Ebb","Flood"),c("Travel"),c("yes")))
 colnames(newData1) <- c("group_size","tide","behavior","calf_presence")
 newData1$dummy_tide <- rep(1,nrow(newData1))
 newData1$dummy_tide[which(newData1$tide=="Ebb")] <- 0
 colnames(newData1) <- c("group_size","tide","behavior","calf_presence","dummy_tide")
+
 #add in the log of group size 
 newData1$lgroup_size <- log(newData1$group_size)
 
@@ -74,7 +74,7 @@ newData1$lgroup_size <- log(newData1$group_size)
 summary <- matrix(NA,nrow = nrow(newData1), ncol=4)
 
 #do at least 1000, possibly more (10000 if you can - not sure how long it will take)
-boots <- 5
+boots <- 100
 
 #store predictions 
 yest <- matrix(NA,nrow=nrow(newData1),ncol=boots)
@@ -84,8 +84,8 @@ for(i in 1:boots){
   y.sim <- unlist(simulate(nb2))  #simulate new response data from model
   ymod <- update(nb2,y.sim ~ .)   #refit model with simulated response
   par <- summary(ymod)$coefficients$cond[,1]  #save coefficients to index
-  #yest[,i] <- exp(predict(ymod,newdata = newData1, type="link", re.form=NA) + rnorm(1,0,sigma.obs))  #store predictions and transform out of link space
-  yest[,i] <- exp(rnbinom(n=1, mu=(par[1] + par[4] * newData1[,6] + par[5] * newData1[,5] + rnorm(1,0,sigma.obs)), size=summary(ymod)$sigma))
+  yest[,i] <- exp(predict(ymod,newdata = newData1, type="link", re.form=NA) + rnorm(1,0,sigma.obs))  #store predictions and transform out of link space
+  #yest[,i] <- exp(rnbinom(n=1, mu=(par[1] + par[4] * newData1[,6] + par[5] * newData1[,5] + rnorm(1,0,sigma.obs)), size=summary(ymod)$sigma))
 }
 
 #summarize 
