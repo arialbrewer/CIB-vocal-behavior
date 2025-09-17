@@ -379,18 +379,15 @@ summary(zi.hur)
 #save random effect variance
 sigma.obs1 <- sqrt(VarCorr(zi.hur)$cond$encounter[1])
 
-#set up a new data frame with values for predictions 
-#note you could choose either "ebb" or "flood"/"yes" or "no" for the third and fourth options
-#I'm choosing "ebb" and "no" because these coefficients then just drop out of the model predictions 
-newData1 <- as.data.frame(expand.grid(seq(1,53,1),c("Mill","Travel"),c("Ebb"),c("no")))
+#set up new data frame with values for predictions 
+newData1 <- as.data.frame(expand.grid(seq(1,53,1),c("Mill","Travel"),c("Ebb"),c("yes")))
 colnames(newData1) <- c("group_size","behavior","tide","calf_presence")
 
-###bootstrap to get uncertainty around predictions  
 #store summary data 
 summary1 <- matrix(NA,nrow = nrow(newData1), ncol=4)
 
-#do at least 1000, possibly more (10000 if you can - not sure how long it will take)
-boots <- 10
+#bootstrap to get uncertainty around predictions  
+boots <- 1000
 
 #store predictions 
 yest1 <- matrix(NA,nrow=nrow(newData1),ncol=boots)
@@ -447,7 +444,7 @@ preds1$back.p.low <- back.p1(preds1$conf.low,preds1$group_size)
 preds1$back.p.high <- back.p1(preds1$conf.high,preds1$group_size)
 
 #update so predictions can't go above plot limit
-preds1$back.p.high <- ifelse(preds1$back.p.high>0.999,0.35,preds1$back.p.high)
+preds1$back.p.high <- ifelse(preds1$back.p.high>0.5,0.5,preds1$back.p.high)
 
 #calculate prob of calling for raw data and divide by group size
 back.p.raw <- function(n_minute2,group_size){
@@ -511,22 +508,19 @@ summary(nb.hur)
 sigma.obs2 <- sqrt(VarCorr(nb.hur)$cond$encounter[1])
 
 #set up a new data frame with values we want for predictions 
-#note you could choose either "Travel" or "Mill"/"yes" or "no" for the third and fourth options
-#I'm choosing "Mill" and "no" because these coefficients then just drop out of the model predictions 
-newData2 <- as.data.frame(expand.grid(seq(1,53,1),c("Ebb","Flood"),c("Mill"),c("no")))
+newData2 <- as.data.frame(expand.grid(seq(1,53,1),c("Ebb","Flood"),c("Travel"),c("yes")))
 colnames(newData2) <- c("group_size","tide","behavior","calf_presence")
-newData2$dummy_tide <- rep(1,nrow(newData2))
-newData2$dummy_tide[which(newData2$tide=="Ebb")] <- 0
-colnames(newData2) <- c("group_size","tide","behavior","calf_presence","dummy_tide")
+#newData2$dummy_tide <- rep(1,nrow(newData2))
+#newData2$dummy_tide[which(newData2$tide=="Ebb")] <- 0
+#colnames(newData2) <- c("group_size","tide","behavior","calf_presence","dummy_tide")
 #add in the log of group size 
 newData2$lgroup_size <- log(newData2$group_size)
 
-#bootstrap to get uncertainty around predictions  
 #store summary data 
 summary2 <- matrix(NA,nrow = nrow(newData2), ncol=4)
 
-#do at least 1000, possibly more (10000 if you can - not sure how long it will take)
-boots <- 10
+#bootstrap to get uncertainty around predictions  
+boots <- 1000
 
 #store predictions 
 yest2 <- matrix(NA,nrow=nrow(newData2),ncol=boots)
@@ -546,7 +540,6 @@ for(i in 1:nrow(newData2)){
   summary2[i,2] <- quantile(yest2[i,],probs=0.025) 
   summary2[i,3] <- quantile(yest2[i,],probs=0.975)
   summary2[i,4] <- sd(yest2[i,])
-  
 }
 
 #save as dataframe and rename columns
@@ -555,7 +548,6 @@ colnames(summary2) <- c("mean2","conf.low2","conf.high2","sd2")
 
 #combine newData and summary
 preds2 <- cbind(newData2,summary2)
-
 
 #predictions plot in linear space
 ggplot() +
@@ -570,22 +562,30 @@ ggplot() +
         axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("peachpuff3","darkslategray")) +
   scale_fill_manual(values=c("peachpuff3","darkslategray")) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
 
 
-#log-log space to check that both are straight lines
-ggplot() +
-  geom_line(data=preds2, aes(x=lgroup_size, y=log(mean2), color=tide), linewidth = 1.75) +
-  #geom_ribbon(data=preds, aes(x=lgroup_size, ymin=log(conf.low), ymax=log(conf.high), fill=tide), alpha = 0.1, color=NA) +
-  #geom_point(data=callrate_total_trunc,aes(x=group_size, y=n_minute, color=tide), position="jitter",alpha=0.4,size=2) +
-  theme_classic() +
-  labs(x="Group size", y="Predicted group calling rate (# calls/minute)") +
-  theme(text=element_text(family="sans"),
-        axis.text = element_text(size=22),
-        axis.ticks.length = unit(0.4,"cm"),
-        axis.line=element_line(colour='black', size=1)) +
-  scale_color_manual(values=c("peachpuff3","darkslategray")) +
-  scale_fill_manual(values=c("peachpuff3","darkslategray")) 
+# #log-log scale to check that both are linear
+# ggplot() +
+#   geom_line(data=preds2, aes(x=lgroup_size, y=log(mean2), color=tide), linewidth = 1.75) +
+#   theme_classic() +
+#   scale_color_manual(values=c("peachpuff3","darkslategray")) +
+#   scale_fill_manual(values=c("peachpuff3","darkslategray")) +
+#   scale_x_continuous(expand=c(0,0)) +
+#   labs(x="log(group size)", y="log(coefficient)")
+# 
+# #check quotients
+# quotient <- data.frame(preds2[54:106,6]/preds2[1:53,6])
+# colnames(quotient) <- c("quotient")
+# quotient <- quotient %>% 
+#   mutate(group_size=c(1:53))
+# 
+# ggplot() +
+#   geom_line(data=quotient, aes(x=group_size, y=quotient), linewidth = 1.75) +
+#   theme_classic() +
+#   labs(x="Group size", y="Tide quotient")+
+#   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) +
+#   ylim(0,8)
 
 
 ####individual level predictions
@@ -593,15 +593,16 @@ ggplot() +
 preds2$ind.call <- preds2$mean2/preds2$group_size
 preds2$ind.call.low <- preds2$conf.low2/preds2$group_size
 preds2$ind.call.high <- preds2$conf.high2/preds2$group_size
-
 callrate_total_trunc$raw.N <- callrate_total_trunc$n_minute/callrate_total_trunc$group_size
+
+#update so predictions can't go above plot limit
+preds2$ind.call.high  <- ifelse(preds2$ind.call.high >10,8.5,preds2$ind.call.high)
 
 #plot
 ggplot() +
   geom_line(data=preds2, aes(x=group_size, y=ind.call, color=tide), linewidth = 1.75) +
   geom_ribbon(data=preds2, aes(x=group_size, ymin=ind.call.low, ymax=ind.call.high, fill=tide), alpha = 0.1, color=NA) +
-  geom_point(data=callrate_total_trunc,aes(x=group_size, y=raw.N, color=tide), 
-             position="jitter",alpha=0.4,size=2) +
+  geom_point(data=callrate_total_trunc,aes(x=group_size, y=raw.N, color=tide), position="jitter",alpha=0.4,size=2) +
   theme_classic() +
   labs(x="Group size", y="Predicted calling rate (# calls/minute)") +
   theme(text=element_text(family="sans"),
@@ -610,90 +611,147 @@ ggplot() +
         axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("peachpuff3","darkslategray")) +
   scale_fill_manual(values=c("peachpuff3","darkslategray")) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10))
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) +
+  scale_y_continuous(breaks=seq(0,8,by=2)) 
 
 
 
 
 #####Full Hurdle model
-##run hurdle part 1 predictions with group size, behavior, tide
-#set up a new data frame with values for predictions
+###Hurdle part 1
+#set up new data frame with values for predictions, these must include all variables
+#in both parts of hurdle model (group size, behavior, tide. Calf set to yes)
+newData_h1 <- as.data.frame(expand.grid(seq(1,53,1),c("Mill","Travel"),c("Ebb","Flood"),c("yes")))
+colnames(newData_h1) <- c("group_size","behavior","tide","calf_presence")
 
-newData_full <- as.data.frame(expand.grid(seq(1,53,1),c("Ebb","Flood"),c("Mill","Travel"),c("no")))
-colnames(newData_full) <- c("group_size","tide","behavior","calf_presence")
-
-#add in the log of group size 
-newData_full$lgroup_size <- log(newData_full$group_size)
+#store summary data 
+summary_h1 <- matrix(NA,nrow = nrow(newData_h1), ncol=4)
 
 #bootstrap to get uncertainty around predictions  
-#store summary data 
-summary_full <- matrix(NA,nrow = nrow(newData_full), ncol=4)
-
-#do at least 1000, possibly more (10000 if you can - not sure how long it will take)
-boots <- 10
+boots <- 1000
 
 #store predictions 
-yest <- matrix(NA,nrow=nrow(newData_full),ncol=boots)
+yest_h1 <- matrix(NA,nrow=nrow(newData_h1),ncol=boots)
+
+#simulate from the model (parametric bootstrap) and then rerun the model with the new data
+for(i in 1:boots){
+  y.sim <- simulate(zi.hur)    #simulate new response data from model
+  y.sim.ones <- y.sim[[1]][,1]    #only choose column for successes
+  ymod <- update(zi.hur,y.sim.ones ~ .)   #refit model with simulated response
+  yest_h1[,i] <- 1/(1+exp(-(predict(ymod,newdata = newData_h1, type="link", re.form=NA) + rnorm(1,0,sigma.obs1))))  #store predictions and transform out of link space
+}
+
+#summarize 
+for(i in 1:nrow(newData_h1)){
+  summary_h1[i,1] <- mean(yest_h1[i,]) 
+  summary_h1[i,2] <- quantile(yest_h1[i,],probs=0.025) 
+  summary_h1[i,3] <- quantile(yest_h1[i,],probs=0.975)
+  summary_h1[i,4] <- sd(yest_h1[i,])
+}
+
+#save output
+summary_h1 <- as.data.frame(summary_h1)
+colnames(summary_h1) <- c("mean1","conf.low1","conf.high1","sd1")
+
+#combine newData and summary
+preds_h1 <- cbind(newData_h1,summary_h1)
+
+
+###Hurdle part 2
+#set up a new data frame with values we want for predictions 
+newData_h2 <- as.data.frame(expand.grid(seq(1,53,1),c("Mill","Travel"),c("Ebb","Flood"),c("yes")))
+colnames(newData_h2) <- c("group_size","behavior","tide","calf_presence")
+
+#add in the log of group size 
+newData_h2$lgroup_size <- log(newData_h2$group_size)
+
+#store summary data 
+summary_h2 <- matrix(NA,nrow = nrow(newData_h2), ncol=4)
+
+#bootstrap to get uncertainty around predictions  
+boots <- 1000
+
+#store predictions 
+yest_h2 <- matrix(NA,nrow=nrow(newData_h2),ncol=boots)
 
 #simulate from the model (parametric bootstrap) and then rerun the model with the new data
 for(i in 1:boots){
   y.sim <- unlist(simulate(nb.hur))  #simulate new response data from model
   ymod <- update(nb.hur,y.sim ~ .)   #refit model with simulated response
   par <- summary(ymod)$coefficients$cond[,1]  #save coefficients to index
-  yest[,i] <- exp(predict(ymod,newdata = newData_full, type="link", re.form=NA) + rnorm(1,0,sigma.obs2))  #store predictions and transform out of link space
+  yest_h2[,i] <- exp(predict(ymod,newdata = newData_h2, type="link", re.form=NA) + rnorm(1,0,sigma.obs2))  #store predictions and transform out of link space
 }
 
 #summarize 
-for(i in 1:nrow(newData_full)){
-  summary_full[i,1] <- mean(yest[i,]) 
-  summary_full[i,2] <- quantile(yest[i,],probs=0.025) 
-  summary_full[i,3] <- quantile(yest[i,],probs=0.975)
-  summary_full[i,4] <- sd(yest[i,])
-  
+for(i in 1:nrow(newData_h2)){
+  summary_h2[i,1] <- mean(yest_h2[i,]) 
+  summary_h2[i,2] <- quantile(yest_h2[i,],probs=0.025) 
+  summary_h2[i,3] <- quantile(yest_h2[i,],probs=0.975)
+  summary_h2[i,4] <- sd(yest_h2[i,])
 }
 
 #save as dataframe and rename columns
-summary_full <- as.data.frame(summary_full)
-colnames(summary_full) <- c("mean","conf.low","conf.high","sd")
+summary_h2 <- as.data.frame(summary_h2)
+colnames(summary_h2) <- c("mean2","conf.low2","conf.high2","sd2")
+
+#remove lgroup_size column so can combine
+newData_h2 <- newData_h2 %>% 
+  select(-lgroup_size)
 
 #combine newData and summary
-preds_full <- cbind(newData_full,summary_full)
+preds_h2 <- cbind(newData_h2,summary_h2)
 
+#create new column in preds1 that combines behavior and tide to create condition and removes columns not in use
+# preds_h1 <- preds_h1 %>% 
+#   mutate(combined=paste(behavior,tide,sep="-")) %>% 
+#   mutate(combined = as.factor(combined)) %>% 
+#   select(-behavior,-tide,-calf_presence,-sd1) 
+
+#create new column in preds2 that combines behavior and tide to create condition and removes columns not in use
+# preds_h2 <- preds_h2 %>% 
+#   mutate(combined=paste(behavior,tide,sep="-")) %>% 
+#   mutate(combined = as.factor(combined)) %>% 
+#   select(-behavior,-tide,-calf_presence,-sd2) 
+
+#merge both prediction dataframes
+final_preds <- merge(preds_h1,preds_h2) 
+
+#multiply across
+final_preds <- final_preds %>% 
+  mutate(mean=mean1*mean2,
+         conf.low=conf.low1*conf.low2,
+         conf.high=conf.high1*conf.high2)
 
 #Plot
 ggplot() +
-  geom_line(data=preds_full,aes(x=group_size, y=mean, color=interaction(behavior,tide)), linewidth=1.75) +
-  geom_ribbon(data=preds_full,aes(x=group_size, ymin=conf.low, ymax=conf.high,fill=interaction(behavior,tide)), alpha = 0.07, color=NA) +
+  geom_line(data=final_preds,aes(x=group_size, y=mean, color=interaction(behavior,tide)), linewidth=1.75) +
+  geom_ribbon(data=final_preds,aes(x=group_size, ymin=conf.low, ymax=conf.high, fill=interaction(behavior,tide)), alpha = 0.07, color=NA) +
   geom_point(data=callrate_total,aes(x=group_size, y=n_minute,color=interaction(behavior,tide)),
-             position="jitter",alpha=0.2,size=2) +
+             position="jitter",alpha=0.3,size=2) +
   theme_classic() +
   labs(x="Group size", y="Calling rate (# calls/minute)") +
   theme(text=element_text(family="sans"),
         axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
-        axis.line=element_line(colour='black', size=1)) +
+        axis.line = element_line(colour='black', size=1),
+        legend.title = element_blank()) +
   scale_color_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
   scale_fill_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
-
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) +
+  scale_y_continuous(breaks=seq(0,150,by=50)) 
 
 
 ##individual level
 #divide estimates and confidence intervals by group size
-preds_full$ind.call <- preds_full$mean/preds_full$group_size
-preds_full$ind.call.low <- preds_full$conf.low/preds_full$group_size
-preds_full$ind.call.high <- preds_full$conf.high/preds_full$group_size
-
-#update so predictions can't go above or below plot limit
-#pred.full$ind.call.high <- ifelse(pred.full$ind.call.high>2.5,2.5,pred.full$ind.call.high)
-preds_full$ind.call.low <- ifelse(preds_full$ind.call.low<0,0,preds_full$ind.call.low)
-
+final_preds$ind.call <- final_preds$mean/final_preds$group_size
+final_preds$ind.call.low <- final_preds$conf.low/final_preds$group_size
+final_preds$ind.call.high <- final_preds$conf.high/final_preds$group_size
 callrate_total$raw.N <- callrate_total$n_minute/callrate_total$group_size
 
-
+#Plot
 ggplot() +
-  geom_line(data=preds_full,aes(x=group_size, y=ind.call, color=interaction(behavior,tide)), linewidth=1.75) +
-  geom_ribbon(data=preds_full,aes(x=group_size, ymin=ind.call.low, ymax=ind.call.high, fill=interaction(behavior,tide)), alpha = 0.08, color=NA) +
+  geom_line(data=final_preds,aes(x=group_size, y=ind.call, color=interaction(behavior,tide)), linewidth=1.75) +
+  geom_ribbon(data=final_preds,aes(x=group_size, ymin=ind.call.low, ymax=ind.call.high, fill=interaction(behavior,tide)), alpha = 0.08, color=NA) +
   geom_point(data=callrate_total,aes(x=group_size, y=raw.N,color=interaction(behavior,tide)),
              position="jitter",alpha=0.3,size=2) +
   theme_classic() +
@@ -701,11 +759,11 @@ ggplot() +
   theme(text=element_text(family="sans",size=4),
         axis.text = element_text(size=24),
         axis.ticks.length = unit(0.4,"cm"),
-        axis.line=element_line(colour='black', size=1)) +
+        axis.line=element_line(colour='black', size=1),
+        legend.title = element_blank()) +
   scale_color_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
   scale_fill_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
-
 
 
 
