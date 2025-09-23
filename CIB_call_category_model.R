@@ -474,7 +474,6 @@ ggplot(pred.calf, aes(x = calf_presence)) +
 
 
 ###########Switching reference level for behavior & calf so can see effect on mill & no calf
-
 #relevel so ws is level 0 (reference level)
 callcat_total$call_category <- relevel(callcat_total$call_category,ref = "ws")
 callcat_total$call_category2 <- as.numeric(callcat_total$call_category)-1
@@ -564,8 +563,6 @@ summary(mn4.flip)
 
 #tide (ebb)
 (exp(0.967)-1)*100
-
-
 
 
 

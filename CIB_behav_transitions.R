@@ -1,6 +1,5 @@
 #Arial Brewer
-#PhD Chapter 2: CIB Vocal Behavior
-#Vocal activity during behavioral transitions
+#PhD Chapter 2: CIB Vocal Behavior- vocal activity during behavioral transitions
 
 #load packages
 library(tidyverse)
@@ -203,7 +202,7 @@ ggplot(travel.mill, aes(x=t_index,y=reorder(call_type,desc(t_index)),height=num_
 
 
 
-#################### Density ridge plots for manuscript
+#################### Density ridge plots
 #New data format for ridge plots, data above has call counts per minute, ridge needs one call per row
 
 #### MILL TO TRAVEL
@@ -320,7 +319,6 @@ ggplot(travel.mill_ridge, aes(x=t_index,y=reorder(call_type,desc(t_index)), fill
         axis.text = element_text(size=18),
         axis.ticks.length = unit(0.3,"cm")) +
   scale_fill_manual(values=c("darkseagreen","cyan4")) 
-
 
 
 

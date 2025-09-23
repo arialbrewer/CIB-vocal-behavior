@@ -510,9 +510,7 @@ sigma.obs2 <- sqrt(VarCorr(nb.hur)$cond$encounter[1])
 #set up a new data frame with values we want for predictions 
 newData2 <- as.data.frame(expand.grid(seq(1,53,1),c("Ebb","Flood"),c("Travel"),c("yes")))
 colnames(newData2) <- c("group_size","tide","behavior","calf_presence")
-#newData2$dummy_tide <- rep(1,nrow(newData2))
-#newData2$dummy_tide[which(newData2$tide=="Ebb")] <- 0
-#colnames(newData2) <- c("group_size","tide","behavior","calf_presence","dummy_tide")
+
 #add in the log of group size 
 newData2$lgroup_size <- log(newData2$group_size)
 
@@ -531,7 +529,6 @@ for(i in 1:boots){
   ymod2 <- update(nb.hur,y.sim ~ .)   #refit model with simulated response
   par <- summary(ymod2)$coefficients$cond[,1]  #save coefficients to index
   yest2[,i] <- exp(predict(ymod2,newdata = newData2, type="link", re.form=NA) + rnorm(1,0,sigma.obs2))  #store predictions and transform out of link space
-  #yest2[,i] <- exp(rnbinom(n=1, mu=(par[1] + par[4] * newData2[,6] + par[5] * newData2[,5] + rnorm(1,0,sigma.obs2)), size=summary(ymod2)$sigma))
 }
 
 #summarize 
@@ -562,7 +559,8 @@ ggplot() +
         axis.line=element_line(colour='black', size=1)) +
   scale_color_manual(values=c("peachpuff3","darkslategray")) +
   scale_fill_manual(values=c("peachpuff3","darkslategray")) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) +
+  ylim(0,150)
 
 
 # #log-log scale to check that both are linear
@@ -577,7 +575,7 @@ ggplot() +
 # #check quotients
 # quotient <- data.frame(preds2[54:106,6]/preds2[1:53,6])
 # colnames(quotient) <- c("quotient")
-# quotient <- quotient %>% 
+# quotient <- quotient %>%
 #   mutate(group_size=c(1:53))
 # 
 # ggplot() +
@@ -701,22 +699,10 @@ newData_h2 <- newData_h2 %>%
 #combine newData and summary
 preds_h2 <- cbind(newData_h2,summary_h2)
 
-#create new column in preds1 that combines behavior and tide to create condition and removes columns not in use
-# preds_h1 <- preds_h1 %>% 
-#   mutate(combined=paste(behavior,tide,sep="-")) %>% 
-#   mutate(combined = as.factor(combined)) %>% 
-#   select(-behavior,-tide,-calf_presence,-sd1) 
-
-#create new column in preds2 that combines behavior and tide to create condition and removes columns not in use
-# preds_h2 <- preds_h2 %>% 
-#   mutate(combined=paste(behavior,tide,sep="-")) %>% 
-#   mutate(combined = as.factor(combined)) %>% 
-#   select(-behavior,-tide,-calf_presence,-sd2) 
-
 #merge both prediction dataframes
 final_preds <- merge(preds_h1,preds_h2) 
 
-#multiply across
+#multiply across predictions for both parts of the model
 final_preds <- final_preds %>% 
   mutate(mean=mean1*mean2,
          conf.low=conf.low1*conf.low2,
@@ -764,6 +750,5 @@ ggplot() +
   scale_color_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
   scale_fill_manual(values=c("goldenrod2","indianred","darkseagreen","deepskyblue4")) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,55,by=10)) 
-
 
 
