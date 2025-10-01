@@ -7,7 +7,7 @@ library(ggridges)
 library(PNWColors)
 
 #read in data from 2021
-setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
+setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/Data/")
 acoustic_files <- intersect(list.files(pattern = "ER21"),list.files(pattern="acoustic.csv"))
 behavior_files <- intersect(list.files(pattern = "ER21"),list.files(pattern="behavior.csv"))
 

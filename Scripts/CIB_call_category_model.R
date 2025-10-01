@@ -9,7 +9,7 @@ library(mgcViz)
 library(marginaleffects)
 
 #load data
-setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/")
+setwd("C:/Users/Arial/Desktop/Ch.2 vocal behavior/CIB vocal behavior code/Data/")
 acoustic_files <- list.files(pattern = "acoustic.csv")
 behavior_files <- list.files(pattern = "behavior.csv")
 
