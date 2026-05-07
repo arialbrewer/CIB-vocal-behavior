@@ -1,3 +1,3 @@
 # Cook Inlet beluga whale vocal behavior
 
-This repository includes code needed to recreate results from Brewer, A.M., Van Cise, A.M., Garner, C., Gilstad, A., Castellote, M., Converse, S.J., Goetz, K.T., Berdahl, A.M. (2026). Cook Inlet beluga whale calling varies by group characteristics, behavior, and tidal state. Behavioral Ecology and Sociobiology.
+This repository includes code needed to recreate results from Brewer, A.M., Van Cise, A.M., Garner, C., Gilstad, A., Castellote, M., Converse, S.J., Goetz, K.T., Berdahl, A.M. (2026). Cook Inlet beluga whale calling varies by group characteristics, behavior, and tidal state. Behav Ecol Sociobiol 80, 62 (2026). https://doi.org/10.1007/s00265-026-03740-6
